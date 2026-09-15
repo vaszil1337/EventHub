@@ -1,0 +1,34 @@
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Java / Spring Boot Backend (Future Week Readiness)
+backend/target/
+backend/build/
+backend/.gradle/
+*.class
+*.jar
+*.war
+
+# Environment & Secrets
+.env
+.env*.local
+*.pem
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
