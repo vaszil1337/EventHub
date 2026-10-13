@@ -4,7 +4,6 @@ import hu.eventhub.domain.model.Event;
 import hu.eventhub.domain.model.EventId;
 import hu.eventhub.domain.model.EventRepository;
 import hu.eventhub.infrastructure.persistence.SampleEventData;
-import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -20,13 +19,6 @@ public class JpaEventRepositoryAdapter implements EventRepository {
 
     public JpaEventRepositoryAdapter(EventSpringDataRepository springDataRepository) {
         this.springDataRepository = Objects.requireNonNull(springDataRepository, "springDataRepository cannot be null");
-    }
-
-    @PostConstruct
-    public void initSeedData() {
-        if (springDataRepository.count() == 0) {
-            resetToSampleData();
-        }
     }
 
     @Override

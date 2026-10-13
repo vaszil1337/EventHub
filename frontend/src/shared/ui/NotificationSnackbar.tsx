@@ -1,5 +1,5 @@
 import React from 'react';
-import { Snackbar, Alert, AlertColor } from '@mui/material';
+import { Snackbar, Alert, AlertColor, alpha } from '@mui/material';
 
 export interface NotificationState {
   open: boolean;
@@ -29,7 +29,11 @@ export const NotificationSnackbar: React.FC<NotificationSnackbarProps> = ({
         onClose={onClose}
         severity={notification.severity}
         variant="filled"
-        sx={{ width: '100%', borderRadius: 2, boxShadow: '0 8px 16px rgba(0,0,0,0.15)' }}
+        sx={{
+          width: '100%',
+          borderRadius: '8px',
+          boxShadow: (theme) => `0 8px 16px ${alpha(theme.palette.common.black, 0.12)}`,
+        }}
       >
         {notification.message}
       </Alert>

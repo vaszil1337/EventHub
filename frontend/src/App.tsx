@@ -24,7 +24,6 @@ export function App() {
     setSelectedCategory,
     categories,
     refreshEvents,
-    resetEvents,
   } = useEvents();
 
   const [selectedEventForBooking, setSelectedEventForBooking] = useState<Event | null>(null);
@@ -72,17 +71,6 @@ export function App() {
     });
   };
 
-  const handleResetData = async () => {
-    await resetEvents();
-    await updateTicketCount();
-    setBookingRefreshKey((prev) => prev + 1);
-    setNotification({
-      open: true,
-      message: 'Demo events and tickets have been reset to default seed state.',
-      severity: 'info',
-    });
-  };
-
   const handleCloseNotification = () => {
     setNotification((prev) => ({ ...prev, open: false }));
   };
@@ -90,7 +78,7 @@ export function App() {
   return (
     <BrowserRouter>
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-        <Navbar totalTicketsCount={totalTickets} onResetData={handleResetData} />
+        <Navbar totalTicketsCount={totalTickets} />
 
         {/* Main Routes Content */}
         <Box sx={{ flexGrow: 1 }}>
@@ -147,12 +135,13 @@ export function App() {
             px: 2,
             mt: 'auto',
             bgcolor: 'background.paper',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid',
+            borderColor: 'divider',
             textAlign: 'center',
           }}
         >
-          <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
-            EventHub • Week 1 MVP (Frontend Architecture & Service Layer) • Ready for Spring Boot & PostgreSQL Backend
+          <Box sx={{ fontSize: '0.8125rem', color: 'text.secondary', fontWeight: 500 }}>
+            EventHub • Event & Ticket Management
           </Box>
         </Box>
       </Box>

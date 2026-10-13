@@ -5,7 +5,6 @@ import { CapacityExceededError, BookingValidationError } from '@/features/ticket
 
 describe('ticketService', () => {
   beforeEach(async () => {
-    localStorage.clear();
     await eventService.resetToSeed();
   });
 

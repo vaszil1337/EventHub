@@ -6,24 +6,32 @@ import {
   Box,
   Button,
   Chip,
-  Tooltip,
   Container,
+  alpha,
 } from '@mui/material';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
 
 interface NavbarProps {
   totalTicketsCount?: number;
-  onResetData: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0, onResetData }) => {
+export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
   return (
-    <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid #e2e8f0', bgcolor: 'background.paper' }}>
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        bgcolor: (theme) => alpha(theme.palette.background.paper, 0.85),
+        backdropFilter: 'blur(12px)',
+        color: 'text.primary',
+      }}
+    >
       <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ justifyContent: 'space-between', py: 1 }}>
+        <Toolbar disableGutters sx={{ justifyContent: 'space-between', minHeight: 64, py: 0.5 }}>
           {/* Logo & Brand */}
           <Box
             component={RouterLink}
@@ -38,48 +46,68 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0, onResetDa
           >
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '10px',
+                width: 34,
+                height: 34,
+                borderRadius: '8px',
                 bgcolor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
+                color: 'primary.contrastText',
+                boxShadow: (theme) => `0 1px 3px ${alpha(theme.palette.common.black, 0.1)}`,
               }}
             >
-              <ConfirmationNumberIcon fontSize="medium" />
+              <ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography variant="h6" color="text.primary" sx={{ lineHeight: 1.2, fontWeight: 700 }}>
-                EventHub
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  EventHub
+                </Typography>
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.7rem',
+                  display: 'block',
+                  fontWeight: 500,
+                }}
+              >
                 Event & Ticket Management
               </Typography>
             </Box>
-            <Chip
-              label="MVP Week 1"
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ ml: 1, height: 22, fontSize: '0.72rem', fontWeight: 600 }}
-            />
           </Box>
 
           {/* Navigation Links */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Button
               component={RouterNavLink}
               to="/"
               end
-              startIcon={<EventAvailableIcon />}
+              startIcon={<CalendarMonthOutlinedIcon sx={{ fontSize: 18 }} />}
               sx={{
-                fontWeight: 600,
+                fontWeight: 500,
+                fontSize: '0.875rem',
                 color: 'text.secondary',
+                px: 1.75,
+                py: 0.75,
+                borderRadius: '6px',
                 '&.active': {
-                  color: 'primary.main',
-                  bgcolor: '#eef2ff',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  bgcolor: 'action.hover',
+                },
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                  color: 'text.primary',
                 },
               }}
             >
@@ -89,13 +117,22 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0, onResetDa
             <Button
               component={RouterNavLink}
               to="/tickets"
-              startIcon={<ConfirmationNumberIcon />}
+              startIcon={<ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />}
               sx={{
-                fontWeight: 600,
+                fontWeight: 500,
+                fontSize: '0.875rem',
                 color: 'text.secondary',
+                px: 1.75,
+                py: 0.75,
+                borderRadius: '6px',
                 '&.active': {
-                  color: 'primary.main',
-                  bgcolor: '#eef2ff',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  bgcolor: 'action.hover',
+                },
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                  color: 'text.primary',
                 },
               }}
             >
@@ -104,24 +141,18 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0, onResetDa
                 <Chip
                   label={totalTicketsCount}
                   size="small"
-                  color="primary"
-                  sx={{ ml: 1, height: 20, fontSize: '0.72rem', fontWeight: 700 }}
+                  sx={{
+                    ml: 1,
+                    height: 18,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    px: 0.25,
+                  }}
                 />
               )}
             </Button>
-
-            <Tooltip title="Reset demo events and tickets to initial seed">
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<RestartAltIcon />}
-                onClick={onResetData}
-                color="inherit"
-                sx={{ ml: 1, borderColor: '#cbd5e1', color: 'text.secondary' }}
-              >
-                Reset Data
-              </Button>
-            </Tooltip>
           </Box>
         </Toolbar>
       </Container>

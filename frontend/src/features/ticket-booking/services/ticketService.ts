@@ -4,10 +4,6 @@ import {
   CapacityExceededError,
   BookingValidationError,
 } from '@/features/ticket-booking/types';
-import { eventService } from '@/features/events/services/eventService';
-import { storage } from '@/shared/utils/localStorage';
-import { STORAGE_KEYS } from '@/shared/utils/seedData';
-import { generateTicketCode, generateId } from '@/shared/utils/codeGenerator';
 import { apiFetch } from '@/shared/services/apiClient';
 
 /**
@@ -20,17 +16,18 @@ function isValidEmail(email: string): boolean {
 
 /**
  * TicketService handles ticket issuance, capacity enforcement, and persistence.
- * Integrated with Spring Boot Hexagonal Backend REST API (/api/tickets).
+ * Communicates directly with the PostgreSQL-backed Spring Boot REST API (/api/tickets).
  */
 export const ticketService = {
   /**
-   * Books a ticket for the requested event.
+   * Books a ticket for the requested event via the backend REST API.
    *
    * BUSINESS RULES:
-   * 1. Validates participant name and email format.
-   * 2. Checks if event exists.
-   * 3. Validates capacity: if soldTicketsCount >= venue.capacity, throws CapacityExceededError.
-   * 4. Integrates with Spring Boot backend POST /api/tickets/book, with graceful fallback.
+   * 1. Validates participant name and email format on client.
+   * 2. Checks if event ID is provided.
+   * 3. Sends booking command to backend (POST /api/tickets/book).
+   * 4. Converts 409 Conflict to CapacityExceededError.
+   * 5. Converts 400 Bad Request to BookingValidationError.
    */
   async bookTicket(request: BookingRequest): Promise<Ticket> {
     const trimmedName = request.participantName?.trim();
@@ -49,7 +46,7 @@ export const ticketService = {
     }
 
     try {
-      const bookedTicket = await apiFetch<Ticket>('/tickets/book', {
+      return await apiFetch<Ticket>('/tickets/book', {
         method: 'POST',
         body: JSON.stringify({
           eventId: request.eventId,
@@ -57,24 +54,6 @@ export const ticketService = {
           participantEmail: trimmedEmail,
         }),
       });
-
-      if (bookedTicket && bookedTicket.ticketCode) {
-        // Synchronize local storage ticket cache
-        const existingTickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
-        storage.set(STORAGE_KEYS.TICKETS, [bookedTicket, ...existingTickets]);
-
-        // Synchronize event counter in local cache
-        const events = await eventService.getEvents();
-        const event = events.find((e) => e.id === request.eventId);
-        if (event) {
-          await eventService.updateEvent({
-            ...event,
-            soldTicketsCount: event.soldTicketsCount + 1,
-          });
-        }
-
-        return bookedTicket;
-      }
     } catch (err: any) {
       if (err?.status === 409) {
         throw new CapacityExceededError(
@@ -84,82 +63,21 @@ export const ticketService = {
       if (err?.status === 400) {
         throw new BookingValidationError(err?.body?.message || err?.message || 'Invalid booking data.');
       }
-      // If network error / backend offline, proceed with local fallback below
+      throw err;
     }
-
-    // Client-side fallback for offline / test environments
-    const event = await eventService.getEventById(request.eventId);
-    if (!event) {
-      throw new Error(`Event with ID "${request.eventId}" does not exist.`);
-    }
-
-    // Critical Business Rule: Capacity Constraint
-    if (event.soldTicketsCount >= event.venue.capacity) {
-      throw new CapacityExceededError(
-        `Event "${event.title}" is fully booked (${event.soldTicketsCount}/${event.venue.capacity} seats taken). No tickets available.`
-      );
-    }
-
-    // Generate unique ticket code
-    const ticketCode = generateTicketCode();
-
-    // Create ticket record
-    const newTicket: Ticket = {
-      id: generateId(),
-      eventId: event.id,
-      participantName: trimmedName,
-      participantEmail: trimmedEmail,
-      ticketCode,
-      price: { ...event.price },
-      purchaseDate: new Date().toISOString(),
-    };
-
-    // Update event sold count
-    const updatedEvent = {
-      ...event,
-      soldTicketsCount: event.soldTicketsCount + 1,
-    };
-    await eventService.updateEvent(updatedEvent);
-
-    // Save ticket in storage
-    const existingTickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
-    storage.set(STORAGE_KEYS.TICKETS, [newTicket, ...existingTickets]);
-
-    return Promise.resolve(newTicket);
   },
 
   /**
-   * Retrieves all purchased tickets from backend or storage.
+   * Retrieves all purchased tickets from the backend.
    */
   async getTickets(): Promise<Ticket[]> {
-    try {
-      const tickets = await apiFetch<Ticket[]>('/tickets');
-      if (Array.isArray(tickets)) {
-        storage.set(STORAGE_KEYS.TICKETS, tickets);
-        return [...tickets];
-      }
-    } catch {
-      // Offline fallback
-    }
-
-    const localTickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
-    return Promise.resolve([...localTickets]);
+    return apiFetch<Ticket[]>('/tickets');
   },
 
   /**
-   * Retrieves tickets for a specific event.
+   * Retrieves tickets for a specific event from the backend.
    */
   async getTicketsByEventId(eventId: string): Promise<Ticket[]> {
-    try {
-      const tickets = await apiFetch<Ticket[]>(`/tickets/event/${eventId}`);
-      if (Array.isArray(tickets)) {
-        return [...tickets];
-      }
-    } catch {
-      // Offline fallback
-    }
-
-    const tickets = await this.getTickets();
-    return Promise.resolve(tickets.filter((t) => t.eventId === eventId));
+    return apiFetch<Ticket[]>(`/tickets/event/${eventId}`);
   },
 };

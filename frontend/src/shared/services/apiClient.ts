@@ -1,7 +1,7 @@
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
 /**
- * Universal fetch wrapper for communicating with the Spring Boot backend REST API.
+ * Universal fetch wrapper for communicating with the backend REST API.
  */
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = endpoint.startsWith('http')
@@ -24,5 +24,10 @@ export async function apiFetch<T>(endpoint: string, options?: RequestInit): Prom
     throw error;
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return undefined as unknown as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }

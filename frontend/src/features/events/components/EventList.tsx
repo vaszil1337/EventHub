@@ -9,8 +9,8 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { Event } from '@/features/events/types';
 import { EventCard } from './EventCard';
 
@@ -38,28 +38,35 @@ export const EventList: React.FC<EventListProps> = ({
   onBookTicket,
 }) => {
   return (
-    <Box sx={{ py: 4 }}>
-      {/* Header and Filter Controls */}
+    <Box sx={{ py: 3 }}>
+      {/* Controls Bar: Title & Filters */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', md: 'center' },
+          alignItems: { xs: 'stretch', sm: 'center' },
           gap: 2,
           mb: 4,
+          pb: 2.5,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         <Box>
-          <Typography variant="h4" component="h2" sx={{ fontWeight: 800 }}>
-            Upcoming Events
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}
+          >
+            All Events
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Explore live conferences, workshops, and concerts. Reserve your tickets instantly.
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Showing {events.length} upcoming {events.length === 1 ? 'event' : 'events'}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
           <TextField
             size="small"
             placeholder="Search events, venues..."
@@ -68,11 +75,18 @@ export const EventList: React.FC<EventListProps> = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <SearchOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 220, bgcolor: 'background.paper' }}
+            sx={{
+              minWidth: { xs: '100%', sm: 240 },
+              bgcolor: 'background.paper',
+              '& .MuiOutlinedInput-root': {
+                height: 40,
+                fontSize: '0.875rem',
+              },
+            }}
           />
 
           <TextField
@@ -80,7 +94,14 @@ export const EventList: React.FC<EventListProps> = ({
             size="small"
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
-            sx={{ minWidth: 150, bgcolor: 'background.paper' }}
+            sx={{
+              minWidth: { xs: '100%', sm: 160 },
+              bgcolor: 'background.paper',
+              '& .MuiOutlinedInput-root': {
+                height: 40,
+                fontSize: '0.875rem',
+              },
+            }}
           >
             <MenuItem value="all">All Categories</MenuItem>
             {categories.map((cat) => (
@@ -94,15 +115,25 @@ export const EventList: React.FC<EventListProps> = ({
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 4,
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: 'error.main',
+            bgcolor: 'error.light',
+            color: 'error.dark',
+          }}
+        >
           {error}
         </Alert>
       )}
 
       {/* Loading State */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+          <CircularProgress size={32} sx={{ color: 'primary.main' }} />
         </Box>
       )}
 
@@ -111,18 +142,19 @@ export const EventList: React.FC<EventListProps> = ({
         <Box
           sx={{
             textAlign: 'center',
-            py: 8,
-            px: 2,
+            py: 10,
+            px: 3,
             bgcolor: 'background.paper',
-            borderRadius: 3,
-            border: '1px dashed #cbd5e1',
+            borderRadius: '12px',
+            border: '1px dashed',
+            borderColor: 'divider',
           }}
         >
-          <EventAvailableIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="h6" color="text.primary">
+          <CalendarMonthOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1.5 }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
             No events found
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Try adjusting your search criteria or category filter.
           </Typography>
         </Box>

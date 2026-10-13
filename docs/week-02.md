@@ -7,6 +7,7 @@ Ez a dokumentum a 2. heti sprint feladatait, technikai megvalósítását és a 
 ## 🎯 2. Hét Célkitűzései
 
 - [x] Java 21 LTS alapú Spring Boot backend inicializálása tiszta **Hexagonális Architektúra (Ports & Adapters)** mintával.
+- [x] **Kizárólag PostgreSQL Adatbázis**: A perzisztens réteg minden esetben és minden környezetben kizárólag PostgreSQL relációs adatbázist alkalmaz.
 - [x] **Tiszta Domain Réteg (Pure Java)** keretrendszer-független üzleti logikával:
   - Üzleti Aggregátum: `Event` (kapacitáskezelés, foglalás validáció, `hasAvailableSeats()`, `recordBooking()`).
   - Entitás: `Ticket` (jegy adatok, eseménykapcsolat, visszaigazolás).

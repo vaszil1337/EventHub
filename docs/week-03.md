@@ -6,13 +6,14 @@ Ez a dokumentum a 3. heti sprint feladatait részletezi: a Spring Data JPA relá
 
 ## 🎯 3. Hét Célkitűzései
 
+- [x] **Kizárólag PostgreSQL Adatbázis**:
+  - A rendszer minden esetben és minden környezetben kizárólag PostgreSQL relációs adatbázist használ (`org.postgresql.Driver`, `PostgreSQLDialect`).
 - [x] **Spring Data JPA & Relációs Perzisztencia (Hexagonal Persistence Adapter)**:
   - `EventJpaEntity` és `TicketJpaEntity` JPA entitások.
   - `EventSpringDataRepository` és `TicketSpringDataRepository` interfészek.
   - `EventPersistenceMapper` és `TicketPersistenceMapper` osztályok a Domain modellek és a JPA entitások közötti kétirányú átalakításra.
   - `JpaEventRepositoryAdapter` (implementálja az `EventRepository` domain portot).
   - `JpaTicketRepositoryAdapter` (implementálja a `TicketRepository` domain portot).
-  - Gyors in-memory fejlesztői és tesztelési fallback: `InMemoryEventRepository`, `InMemoryTicketRepository`, `SampleEventData`.
 - [x] **Verziózott Adatbázis Migrációk (`src/main/resources/db/migration/`)**:
   - `V1__create_venues_and_events.sql`: `events` tábla létrehozása indexekkel és megszorításokkal.
   - `V2__create_tickets.sql`: `tickets` tábla létrehozása idegen kulccsal (`ON DELETE CASCADE`) és egyedi jegykód megszorítással.

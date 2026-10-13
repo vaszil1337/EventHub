@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookingDialog } from './BookingDialog';
 import { Event } from '@/features/events/types';
-import { eventService } from '@/features/events/services/eventService';
+import { setMockEvents } from '@/test/setup';
 
 const mockAvailableEvent: Event = {
   id: 'evt-available-1',
@@ -36,21 +36,8 @@ const mockSoldOutEvent: Event = {
 };
 
 describe('BookingDialog Integration Tests', () => {
-  beforeEach(async () => {
-    localStorage.clear();
-    // Seed events in storage so eventService can look them up
-    await eventService.updateEvent(mockAvailableEvent).catch(async () => {
-      await eventService.resetToSeed();
-      await eventService.updateEvent(mockAvailableEvent).catch(() => {});
-    });
-    // Ensure both mock events are present in storage
-    const current = await eventService.getEvents();
-    const updated = [
-      ...current.filter((e) => e.id !== mockAvailableEvent.id && e.id !== mockSoldOutEvent.id),
-      mockAvailableEvent,
-      mockSoldOutEvent,
-    ];
-    localStorage.setItem('eventhub_events', JSON.stringify(updated));
+  beforeEach(() => {
+    setMockEvents([mockAvailableEvent, mockSoldOutEvent]);
   });
 
   it('renders event details and input fields when opened', () => {

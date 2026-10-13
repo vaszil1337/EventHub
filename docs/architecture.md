@@ -24,9 +24,9 @@ Az EventHub célja egy modern, skálázható és felhasználóbarát eseménysze
 | **Navigáció & Routing** | React Router (v7) | Kliensoldali útvonalkezelés (`/`, `/events/:id`, `/tickets`) |
 | **Build & Dev Tool** | Vite | Gyors ESM bundler és HMR fejlesztői szerver |
 | **Frontend Tesztelés** | Vitest + React Testing Library | Unit és integrációs komponens tesztelés |
-| **Backend (2. héttől)** | Spring Boot 3.x (Java 21 LTS) | Domain-Driven Design (DDD) REST API |
-| **Adatbázis (3. héttől)** | PostgreSQL | Relációs perzisztencia ACID garanciákkal |
-| **Migráció** | Flyway / Liquibase | Verziózott adatbázis sémakezelés |
+| **Backend** | Spring Boot 3.x / 4.x (Java 21 LTS) | Hexagonális Architektúra (DDD) REST API |
+| **Adatbázis (Kizárólag)** | PostgreSQL | Kizárólagos relációs perzisztencia minden esetben ACID garanciákkal |
+| **Migráció** | Flyway | Verziózott adatbázis sémakezelés (V1, V2, V3) |
 
 ---
 
@@ -35,6 +35,7 @@ Az EventHub célja egy modern, skálázható és felhasználóbarát eseménysze
 ```
 EventHub/
 ├── .gitignore                     # Gyökér szintű Git kizárások (frontend és backend egyben)
+├── docker-compose.yml             # PostgreSQL 16 adatbázis konténer definíció
 ├── docs/                          # Tervezési és heti dokumentációk
 │   ├── architecture.md            # Ez a fő rendszerterv
 │   ├── week-01.md                 # 1. heti sprint összefoglaló (Frontend MVP)

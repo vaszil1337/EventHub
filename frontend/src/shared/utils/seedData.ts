@@ -1,10 +1,4 @@
 import { Event } from '@/features/events/types';
-import { storage } from './localStorage';
-
-export const STORAGE_KEYS = {
-  EVENTS: 'eventhub_events',
-  TICKETS: 'eventhub_tickets',
-} as const;
 
 export const INITIAL_EVENTS: Event[] = [
   {
@@ -68,17 +62,3 @@ export const INITIAL_EVENTS: Event[] = [
     imageUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1000&q=80',
   },
 ];
-
-/**
- * Ensures initial seed data is loaded into localStorage if no events exist yet.
- * Can also be forced to reset demo data.
- */
-export function seedInitialData(forceReset = false): void {
-  const existingEvents = storage.get<Event[] | null>(STORAGE_KEYS.EVENTS, null);
-  if (!existingEvents || existingEvents.length === 0 || forceReset) {
-    storage.set(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
-    if (forceReset) {
-      storage.remove(STORAGE_KEYS.TICKETS);
-    }
-  }
-}

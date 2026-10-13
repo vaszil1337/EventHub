@@ -8,7 +8,7 @@ Ez a modul az **EventHub** backend szolgáltatása, amely a **Hexagonális Archi
 - **Framework**: Spring Boot 3.x / 4.x
 - **Language**: Java 21 LTS
 - **Build Tool**: Maven (`pom.xml`) & Gradle (`build.gradle`)
-- **Database**: PostgreSQL (éles környezetben) / H2 PostgreSQL kompatibilis mód (helyi azonnali futtatáshoz)
+- **Database**: **KIZÁRÓLAG PostgreSQL** (minden környezetben és minden esetben kizárólag a PostgreSQL az adatbázis)
 - **Database Migrations**: Flyway SQL migrációk (`src/main/resources/db/migration/`)
 - **Architectural Paradigm**: Hexagonal Architecture (Ports & Adapters)
 
@@ -114,19 +114,30 @@ backend/
 
 ## 🚀 Indítás és Futtatás
 
-### 1. Backend Tesztek Futtatása
+### 1. PostgreSQL Adatbázis Indítása Dockerrel
+A projekt gyökerében található `docker-compose.yml` indítja a dedikált PostgreSQL konténert az elvárt konfigurációval (`eventhub` adatbázis, `postgres`/`postgres` felhasználó, `5432`-es port):
+```bash
+docker compose up -d
+```
+
+A konténer leállítása:
+```bash
+docker compose down
+```
+
+### 2. Backend Tesztek Futtatása
 ```bash
 cd backend
 mvn test
 ```
 
-### 2. Backend Szerver Indítása (Port: 8080)
+### 3. Backend Szerver Indítása (Port: 8080)
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-A backend alapértelmezetten H2 in-memory adatbázissal és PostgreSQL kompatibilitási móddal indul el, így nulla külső konfigurációval azonnal használható. PostgreSQL használatához elegendő beállítani a standard környezeti változókat:
+A backend kizárólag PostgreSQL adatbázissal működik (alapértelmezett: `localhost:5432/eventhub`, `postgres`/`postgres`). Eltérő környezet esetén a paraméterek környezeti változókkal felülbírálhatók:
 ```bash
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/eventhub
 export SPRING_DATASOURCE_USERNAME=postgres

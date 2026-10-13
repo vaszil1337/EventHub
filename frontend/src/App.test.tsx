@@ -16,7 +16,6 @@ function renderApp() {
 
 describe('App End-to-End Component Flow with React Router', () => {
   beforeEach(async () => {
-    localStorage.clear();
     await eventService.resetToSeed();
   });
 
@@ -25,7 +24,7 @@ describe('App End-to-End Component Flow with React Router', () => {
 
     // Verify Navbar branding
     expect(screen.getByText('EventHub')).toBeInTheDocument();
-    expect(screen.getByText(/MVP Week 1/)).toBeInTheDocument();
+    expect(screen.getAllByText('Event & Ticket Management').length).toBeGreaterThanOrEqual(1);
 
     // Wait for events to load and render
     await waitFor(() => {

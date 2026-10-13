@@ -3,22 +3,21 @@ import {
   Container,
   Box,
   Typography,
-  Paper,
   Grid,
   Card,
   CardContent,
   CircularProgress,
   Alert,
-  Chip,
   Button,
   Tooltip,
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
-import PersonIcon from '@mui/icons-material/Person';
-import EmailIcon from '@mui/icons-material/Email';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import EventIcon from '@mui/icons-material/Event';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined';
+import { Link as RouterLink } from 'react-router-dom';
 import { Ticket } from '@/features/ticket-booking/types';
 import { ticketService } from '@/features/ticket-booking/services/ticketService';
 import { eventService } from '@/features/events/services/eventService';
@@ -60,7 +59,7 @@ export const TicketsPage: React.FC = () => {
   }, []);
 
   const handleCopyTicketCode = (ticketCode: string, ticketId: string) => {
-    navigator.clipboard.writeText(ticketCode).then(() => {
+    navigator.clipboard?.writeText(ticketCode).then(() => {
       setCopiedTicketId(ticketId);
       setTimeout(() => setCopiedTicketId(null), 2000);
     });
@@ -68,8 +67,8 @@ export const TicketsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <CircularProgress />
+      <Container maxWidth="lg" sx={{ py: 12, textAlign: 'center' }}>
+        <CircularProgress size={32} sx={{ color: 'primary.main' }} />
       </Container>
     );
   }
@@ -77,221 +76,354 @@ export const TicketsPage: React.FC = () => {
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert
+          severity="error"
+          sx={{
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: 'error.main',
+            bgcolor: 'error.light',
+            color: 'error.dark',
+          }}
+        >
+          {error}
+        </Alert>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Box sx={{ pb: 8 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 800, mb: 1 }}>
-          My Tickets
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          View and manage all your purchased event tickets. Click the ticket code to copy it to your clipboard.
-        </Typography>
+      <Box
+        sx={{
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          pt: { xs: 5, md: 7 },
+          pb: { xs: 4, md: 5 },
+          mb: 4,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ maxWidth: 640 }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '9999px',
+                bgcolor: 'action.hover',
+                color: 'text.secondary',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                mb: 2,
+              }}
+            >
+              <ConfirmationNumberOutlinedIcon sx={{ fontSize: 14 }} />
+              {tickets.length} {tickets.length === 1 ? 'Pass Issued' : 'Passes Issued'}
+            </Box>
 
-        {tickets.length === 0 ? (
-          <Alert severity="info">
-            No tickets yet. Browse events and book your first ticket!
-          </Alert>
-        ) : (
-          <Chip
-            icon={<ConfirmationNumberIcon />}
-            label={`${tickets.length} Ticket${tickets.length !== 1 ? 's' : ''} Issued`}
-            color="primary"
-            variant="outlined"
-            sx={{ fontWeight: 700 }}
-          />
-        )}
+            <Typography
+              variant="h3"
+              component="h1"
+              sx={{
+                fontWeight: 800,
+                color: 'text.primary',
+                mb: 1.5,
+                fontSize: { xs: '2rem', md: '2.5rem' },
+                letterSpacing: '-0.03em',
+              }}
+            >
+              My Tickets & Passes
+            </Typography>
+
+            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+              View and manage all your reserved tickets. Present your unique pass code at the venue check-in desk.
+            </Typography>
+          </Box>
+        </Container>
       </Box>
 
-      {/* Tickets Grid */}
-      {tickets.length > 0 && (
-        <Grid container spacing={3}>
-          {tickets.map((ticket) => {
-            const event = eventMap[ticket.eventId];
-            const purchaseDate = new Date(ticket.purchaseDate);
-            const formattedPurchaseDate = purchaseDate.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            });
+      {/* Main Container */}
+      <Container maxWidth="lg">
+        {tickets.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 10,
+              px: 3,
+              bgcolor: 'background.paper',
+              borderRadius: '12px',
+              border: '1px dashed',
+              borderColor: 'divider',
+              maxWidth: 520,
+              mx: 'auto',
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: '12px',
+                bgcolor: 'action.hover',
+                color: 'text.secondary',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 2,
+              }}
+            >
+              <ConfirmationNumberOutlinedIcon sx={{ fontSize: 24 }} />
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
+              No tickets reserved yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+              Explore the upcoming events and reserve your seat to get your digital access code.
+            </Typography>
+            <Button
+              component={RouterLink}
+              to="/"
+              variant="contained"
+              endIcon={<ArrowForwardOutlinedIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: '8px',
+                px: 2.5,
+                py: 1,
+              }}
+            >
+              Browse Events
+            </Button>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {tickets.map((ticket) => {
+              const event = eventMap[ticket.eventId];
+              const purchaseDate = new Date(ticket.purchaseDate);
+              const formattedPurchaseDate = purchaseDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              });
 
-            return (
-              <Grid item xs={12} sm={6} md={4} key={ticket.id}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 2.5,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, pb: 1.5 }}>
-                    {/* Event Title */}
-                    {event ? (
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
-                        <EventIcon
+              return (
+                <Grid item xs={12} sm={6} md={4} key={ticket.id}>
+                  {/* Modern Boarding Pass / Ticket Card */}
+                  <Card
+                    elevation={0}
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      '&:hover': {
+                        borderColor: 'text.secondary',
+                        boxShadow: (theme) => `0 8px 24px -4px ${theme.palette.action.hover}`,
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                      {/* Top Bar: Event Category or Status */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Box
                           sx={{
-                            color: 'primary.main',
-                            fontSize: '1.25rem',
-                            mt: 0.3,
-                            flexShrink: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: '9999px',
+                            bgcolor: 'success.light',
+                            border: '1px solid',
+                            borderColor: 'success.main',
+                            color: 'success.dark',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
                           }}
-                        />
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography
-                            variant="subtitle1"
-                            sx={{
-                              fontWeight: 700,
-                              color: 'text.primary',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {event.title}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            {formatEventDate(event.date)}
-                          </Typography>
+                        >
+                          <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'success.main' }} />
+                          CONFIRMED PASS
                         </Box>
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Event Not Found
-                      </Typography>
-                    )}
 
-                    {/* Ticket Code */}
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        mb: 2,
-                        borderRadius: 1.5,
-                        bgcolor: '#f8fafc',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 1,
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                        <ConfirmationNumberIcon
-                          sx={{ color: 'primary.main', fontSize: '1rem', flexShrink: 0 }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            color: 'text.primary',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          data-testid="ticket-code-display"
-                        >
-                          {ticket.ticketCode}
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                          {formattedPurchaseDate}
                         </Typography>
                       </Box>
-                      <Tooltip title={copiedTicketId === ticket.id ? 'Copied!' : 'Copy ticket code'}>
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={() => handleCopyTicketCode(ticket.ticketCode, ticket.id)}
-                          sx={{
-                            minWidth: 'auto',
-                            p: 0.5,
-                            flexShrink: 0,
-                            color: copiedTicketId === ticket.id ? 'success.main' : 'text.secondary',
-                          }}
-                        >
-                          <ContentCopyIcon sx={{ fontSize: '1rem' }} />
-                        </Button>
-                      </Tooltip>
-                    </Paper>
 
-                    {/* Participant Info */}
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <PersonIcon sx={{ color: 'text.secondary', fontSize: '1rem' }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                          PARTICIPANT
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', ml: 3.5 }}>
-                        {ticket.participantName}
-                      </Typography>
-                    </Box>
-
-                    {/* Email Info */}
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <EmailIcon sx={{ color: 'text.secondary', fontSize: '1rem' }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                          EMAIL
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 500,
-                          color: 'primary.main',
-                          ml: 3.5,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {ticket.participantEmail}
-                      </Typography>
-                    </Box>
-
-                    {/* Price Info */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        TICKET PRICE
-                      </Typography>
+                      {/* Event Title */}
                       <Typography
                         variant="h6"
                         sx={{
-                          fontWeight: 800,
-                          color: 'primary.dark',
-                          mt: 0.5,
+                          fontWeight: 700,
+                          fontSize: '1.05rem',
+                          color: 'text.primary',
+                          lineHeight: 1.35,
+                          mb: 1.5,
                         }}
                       >
-                        {formatMoney(ticket.price)}
+                        {event ? event.title : 'Event Reservation'}
                       </Typography>
-                    </Box>
 
-                    {/* Purchase Date */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarTodayIcon sx={{ color: 'text.secondary', fontSize: '0.875rem' }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Purchased on {formattedPurchaseDate}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
-    </Container>
+                      {/* Event Meta */}
+                      {event && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
+                            <CalendarTodayOutlinedIcon sx={{ fontSize: '0.85rem' }} />
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                              {formatEventDate(event.date)}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
+                            <PlaceOutlinedIcon sx={{ fontSize: '0.9rem', flexShrink: 0 }} />
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {event.venue.name}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Perforated Stub Section */}
+                      <Box
+                        sx={{
+                          mt: 'auto',
+                          pt: 2,
+                          borderTop: '1px dashed',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {/* Ticket Code Box */}
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: '8px',
+                            bgcolor: 'action.hover',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                fontSize: '0.65rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                                display: 'block',
+                              }}
+                            >
+                              PASS CODE
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
+                                color: 'text.primary',
+                                letterSpacing: '0.03em',
+                              }}
+                              data-testid="ticket-code-display"
+                            >
+                              {ticket.ticketCode}
+                            </Typography>
+                          </Box>
+
+                          <Tooltip title={copiedTicketId === ticket.id ? 'Copied to clipboard' : 'Copy code'}>
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => handleCopyTicketCode(ticket.ticketCode, ticket.id)}
+                              sx={{
+                                minWidth: 'auto',
+                                p: 0.75,
+                                color: copiedTicketId === ticket.id ? 'success.main' : 'text.secondary',
+                                borderRadius: '6px',
+                                '&:hover': {
+                                  bgcolor: 'divider',
+                                },
+                              }}
+                            >
+                              {copiedTicketId === ticket.id ? (
+                                <CheckOutlinedIcon sx={{ fontSize: 16 }} />
+                              ) : (
+                                <ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />
+                              )}
+                            </Button>
+                          </Tooltip>
+                        </Box>
+
+                        {/* Attendee Info & Price */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <Box sx={{ minWidth: 0, pr: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {ticket.participantName}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                display: 'block',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {ticket.participantEmail}
+                            </Typography>
+                          </Box>
+
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 800,
+                              color: 'text.primary',
+                              fontFeatureSettings: '"tnum"',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {formatMoney(ticket.price)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Container>
+    </Box>
   );
 };

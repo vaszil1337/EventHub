@@ -6,9 +6,10 @@ import {
   IconButton,
   Typography,
   Box,
+  alpha,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { useTicketBooking } from '@/features/ticket-booking/hooks/useTicketBooking';
@@ -71,8 +72,12 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          p: { xs: 1, sm: 2 },
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          p: { xs: 1.5, sm: 2.5 },
+          boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
         },
       }}
       data-testid="booking-dialog"
@@ -82,12 +87,27 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          pb: 1,
+          pb: 1.5,
+          pt: 1,
+          px: 1,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <ConfirmationNumberIcon color="primary" />
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: '8px',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}>
             {bookedTicket ? 'Ticket Issued' : 'Book Event Ticket'}
           </Typography>
         </Box>
@@ -96,12 +116,13 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
           onClick={handleClose}
           disabled={loading}
           size="small"
+          sx={{ color: 'text.secondary' }}
         >
-          <CloseIcon />
+          <CloseOutlinedIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 1 }}>
+      <DialogContent sx={{ pt: 1, px: 1 }}>
         {bookedTicket ? (
           <BookingSuccess
             ticket={bookedTicket}
