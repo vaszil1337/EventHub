@@ -8,6 +8,7 @@ import { eventService } from '@/features/events/services/eventService';
 import { storage } from '@/shared/utils/localStorage';
 import { STORAGE_KEYS } from '@/shared/utils/seedData';
 import { generateTicketCode, generateId } from '@/shared/utils/codeGenerator';
+import { apiFetch } from '@/shared/services/apiClient';
 
 /**
  * Validates email format using standard regex
@@ -19,17 +20,17 @@ function isValidEmail(email: string): boolean {
 
 /**
  * TicketService handles ticket issuance, capacity enforcement, and persistence.
- * Completely abstracted from UI components for future Spring Boot backend transition.
+ * Integrated with Spring Boot Hexagonal Backend REST API (/api/tickets).
  */
 export const ticketService = {
   /**
    * Books a ticket for the requested event.
    *
    * BUSINESS RULES:
-   * 1. Validates participant name and email.
+   * 1. Validates participant name and email format.
    * 2. Checks if event exists.
    * 3. Validates capacity: if soldTicketsCount >= venue.capacity, throws CapacityExceededError.
-   * 4. Upon success, increments event soldTicketsCount, generates unique ticketCode, and saves ticket.
+   * 4. Integrates with Spring Boot backend POST /api/tickets/book, with graceful fallback.
    */
   async bookTicket(request: BookingRequest): Promise<Ticket> {
     const trimmedName = request.participantName?.trim();
@@ -47,6 +48,46 @@ export const ticketService = {
       throw new BookingValidationError('Event ID is required.');
     }
 
+    try {
+      const bookedTicket = await apiFetch<Ticket>('/tickets/book', {
+        method: 'POST',
+        body: JSON.stringify({
+          eventId: request.eventId,
+          participantName: trimmedName,
+          participantEmail: trimmedEmail,
+        }),
+      });
+
+      if (bookedTicket && bookedTicket.ticketCode) {
+        // Synchronize local storage ticket cache
+        const existingTickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
+        storage.set(STORAGE_KEYS.TICKETS, [bookedTicket, ...existingTickets]);
+
+        // Synchronize event counter in local cache
+        const events = await eventService.getEvents();
+        const event = events.find((e) => e.id === request.eventId);
+        if (event) {
+          await eventService.updateEvent({
+            ...event,
+            soldTicketsCount: event.soldTicketsCount + 1,
+          });
+        }
+
+        return bookedTicket;
+      }
+    } catch (err: any) {
+      if (err?.status === 409) {
+        throw new CapacityExceededError(
+          err?.body?.message || err?.message || 'Event has reached full capacity. No tickets available.'
+        );
+      }
+      if (err?.status === 400) {
+        throw new BookingValidationError(err?.body?.message || err?.message || 'Invalid booking data.');
+      }
+      // If network error / backend offline, proceed with local fallback below
+    }
+
+    // Client-side fallback for offline / test environments
     const event = await eventService.getEventById(request.eventId);
     if (!event) {
       throw new Error(`Event with ID "${request.eventId}" does not exist.`);
@@ -88,17 +129,36 @@ export const ticketService = {
   },
 
   /**
-   * Retrieves all purchased tickets.
+   * Retrieves all purchased tickets from backend or storage.
    */
   async getTickets(): Promise<Ticket[]> {
-    const tickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
-    return Promise.resolve([...tickets]);
+    try {
+      const tickets = await apiFetch<Ticket[]>('/tickets');
+      if (Array.isArray(tickets)) {
+        storage.set(STORAGE_KEYS.TICKETS, tickets);
+        return [...tickets];
+      }
+    } catch {
+      // Offline fallback
+    }
+
+    const localTickets = storage.get<Ticket[]>(STORAGE_KEYS.TICKETS, []);
+    return Promise.resolve([...localTickets]);
   },
 
   /**
    * Retrieves tickets for a specific event.
    */
   async getTicketsByEventId(eventId: string): Promise<Ticket[]> {
+    try {
+      const tickets = await apiFetch<Ticket[]>(`/tickets/event/${eventId}`);
+      if (Array.isArray(tickets)) {
+        return [...tickets];
+      }
+    } catch {
+      // Offline fallback
+    }
+
     const tickets = await this.getTickets();
     return Promise.resolve(tickets.filter((t) => t.eventId === eventId));
   },

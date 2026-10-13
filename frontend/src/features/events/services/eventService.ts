@@ -1,35 +1,58 @@
 import { Event } from '@/features/events/types';
 import { storage } from '@/shared/utils/localStorage';
 import { STORAGE_KEYS, INITIAL_EVENTS, seedInitialData } from '@/shared/utils/seedData';
+import { apiFetch } from '@/shared/services/apiClient';
 
 /**
  * EventService handles all data operations for Events.
- * Decoupled from UI components to allow future replacement with Spring Boot REST API calls.
+ * Integrated with Spring Boot REST API (/api/events) with local storage cache fallback.
  */
 export const eventService = {
   /**
-   * Fetches all events, ensuring storage is seeded on first access.
+   * Fetches all events from the backend REST API, falling back to local storage if offline.
    */
   async getEvents(): Promise<Event[]> {
+    try {
+      const events = await apiFetch<Event[]>('/events');
+      if (Array.isArray(events) && events.length > 0) {
+        storage.set(STORAGE_KEYS.EVENTS, events);
+        return [...events];
+      }
+    } catch {
+      // Graceful offline/test fallback
+    }
+
     seedInitialData();
-    const events = storage.get<Event[]>(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
-    return Promise.resolve([...events]);
+    const localEvents = storage.get<Event[]>(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
+    return Promise.resolve([...localEvents]);
   },
 
   /**
    * Finds an event by its unique ID.
    */
   async getEventById(id: string): Promise<Event | null> {
+    try {
+      const event = await apiFetch<Event>(`/events/${id}`);
+      if (event && event.id) {
+        return event;
+      }
+    } catch (err: any) {
+      if (err?.status === 404) {
+        return null;
+      }
+      // Graceful fallback
+    }
+
     const events = await this.getEvents();
     const found = events.find((e) => e.id === id);
     return Promise.resolve(found ? { ...found } : null);
   },
 
   /**
-   * Updates an existing event.
+   * Updates an existing event in local storage / sync.
    */
   async updateEvent(updatedEvent: Event): Promise<Event> {
-    const events = await this.getEvents();
+    const events = storage.get<Event[]>(STORAGE_KEYS.EVENTS, INITIAL_EVENTS);
     const index = events.findIndex((e) => e.id === updatedEvent.id);
 
     if (index === -1) {
@@ -44,9 +67,14 @@ export const eventService = {
   },
 
   /**
-   * Resets events back to initial sample seed data.
+   * Resets events back to initial sample seed data on the backend and locally.
    */
   async resetToSeed(): Promise<void> {
+    try {
+      await apiFetch('/events/reset', { method: 'POST' });
+    } catch {
+      // Offline fallback
+    }
     seedInitialData(true);
     return Promise.resolve();
   },

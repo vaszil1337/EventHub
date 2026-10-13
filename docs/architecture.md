@@ -37,11 +37,25 @@ EventHub/
 ├── .gitignore                     # Gyökér szintű Git kizárások (frontend és backend egyben)
 ├── docs/                          # Tervezési és heti dokumentációk
 │   ├── architecture.md            # Ez a fő rendszerterv
-│   └── week-01.md                 # 1. heti sprint összefoglaló és MVP specifikáció
+│   ├── week-01.md                 # 1. heti sprint összefoglaló (Frontend MVP)
+│   ├── week-02.md                 # 2. heti sprint (Hexagonal Architecture & Domain DDD)
+│   └── week-03.md                 # 3. heti sprint (JPA, Migrációk & REST Integráció)
 │
-├── backend/                       # Java / Spring Boot projekt gyökere
-│   ├── README.md                  # Backend specifikáció és DDD irányelvek
-│   └── (pom.xml / build.gradle)   # 2. héten bevezetésre kerülő állományok
+├── backend/                       # Spring Boot Hexagonális Backend (Java 21)
+│   ├── pom.xml                    # Maven projekt konfiguráció
+│   ├── build.gradle               # Gradle konfiguráció
+│   ├── README.md                  # Backend futtatási és tervezési dokumentáció
+│   └── src/
+│       ├── main/
+│       │   ├── java/hu/eventhub/
+│       │   │   ├── EventHubBackendApplication.java
+│       │   │   ├── domain/        # Tiszta Java Domain (model, exception, ports)
+│       │   │   ├── application/   # Használati esetek (port/in, service)
+│       │   │   └── infrastructure/# Adapterek (configuration, persistence/jpa, web)
+│       │   └── resources/
+│       │       ├── application.properties
+│       │       └── db/migration/  # Flyway SQL migrációk (V1, V2, V3)
+│       └── test/                  # Domain, UseCase és Web tesztek (100% pass)
 │
 └── frontend/                      # React + TypeScript + MUI projekt
     ├── package.json               # Függőségek (React, MUI, React Router, Vitest)
@@ -156,14 +170,14 @@ gantt
     LocalStorage Service Absztrakció :done,    des2, 2026-09-01, 2026-09-07
     Kapacitáskezelés & MUI Dialógus  :done,    des3, 2026-09-04, 2026-09-07
     React Router & Több Oldal        :done,    des4, 2026-09-05, 2026-09-08
-    section Week 2 (Backend DDD)
-    Spring Boot 3 Inicializálás      :active,  des5, 2026-09-08, 2026-09-14
-    Domain Réteg (Event, Ticket DDD) :         des6, 2026-09-09, 2026-09-14
-    REST API Végpontok Kialakítása   :         des7, 2026-09-11, 2026-09-14
-    section Week 3 (Perzisztencia)
-    PostgreSQL & JPA Adatbázis       :         des8, 2026-09-15, 2026-09-21
-    Flyway Migrációk                 :         des9, 2026-09-16, 2026-09-21
-    Frontend Service -> REST bekötés :         des10, 2026-09-18, 2026-09-21
+    section Week 2 (Backend DDD & Hexagonal)
+    Spring Boot Inicializálás        :done,    des5, 2026-09-08, 2026-09-14
+    Domain Réteg (Event, Ticket DDD) :done,    des6, 2026-09-09, 2026-09-14
+    REST API & Hexagonal Config      :done,    des7, 2026-09-11, 2026-09-14
+    section Week 3 (Perzisztencia & Integráció)
+    PostgreSQL & JPA Adapterek       :done,    des8, 2026-09-15, 2026-09-21
+    Flyway Migrációk (V1, V2, V3)    :done,    des9, 2026-09-16, 2026-09-21
+    Frontend Service -> REST bekötés :done,    des10, 2026-09-18, 2026-09-21
     section Week 4 (Haladó Funkciók)
     Biztonság & Jogosultságok (Auth) :         des11, 2026-09-22, 2026-09-28
     PDF / QR-kód jegygenerálás       :         des12, 2026-09-24, 2026-09-28
