@@ -1,15 +1,19 @@
 package hu.eventhub.infrastructure.presentation.web;
 
 import hu.eventhub.application.service.*;
-import hu.eventhub.domain.model.TicketCodeGenerator;
+import hu.eventhub.domain.model.*;
 import hu.eventhub.infrastructure.configuration.DefaultTicketCodeGenerator;
 import hu.eventhub.infrastructure.notification.SmtpEmailNotificationAdapter;
-import hu.eventhub.infrastructure.persistence.InMemoryEventRepository;
-import hu.eventhub.infrastructure.persistence.InMemoryTicketRepository;
+import hu.eventhub.infrastructure.persistence.SampleEventData;
+import hu.eventhub.infrastructure.security.BCryptPasswordHasherAdapter;
+import hu.eventhub.infrastructure.security.HmacJwtTokenProviderAdapter;
+import hu.eventhub.infrastructure.security.JwtAuthenticationFilter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -17,8 +21,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.*;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -26,15 +35,88 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class EventControllerIntegrationTest {
 
     private MockMvc mockMvc;
+    private String organizerJwtToken;
+    private String participantJwtToken;
 
     @BeforeEach
     void setUp() {
-        InMemoryEventRepository eventRepository = new InMemoryEventRepository();
-        InMemoryTicketRepository ticketRepository = new InMemoryTicketRepository();
+        EventRepository eventRepository = mock(EventRepository.class);
+        TicketRepository ticketRepository = mock(TicketRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+
+        Map<String, EventSnapshot> eventStore = new LinkedHashMap<>();
+        for (Event seed : SampleEventData.initialEvents()) {
+            eventStore.put(seed.getId().value(), seed.toSnapshot());
+        }
+        Map<String, TicketSnapshot> ticketStore = new LinkedHashMap<>();
+        Map<String, User> userStoreByEmail = new LinkedHashMap<>();
+
+        when(eventRepository.findAll()).thenAnswer(inv ->
+                eventStore.values().stream().map(Event::restore).toList());
+        when(eventRepository.findById(any(EventId.class))).thenAnswer(inv -> {
+            EventId id = inv.getArgument(0, EventId.class);
+            return Optional.ofNullable(eventStore.get(id.value())).map(Event::restore);
+        });
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> {
+            Event e = inv.getArgument(0, Event.class);
+            eventStore.put(e.getId().value(), e.toSnapshot());
+            return e;
+        });
+
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> {
+            Ticket t = inv.getArgument(0, Ticket.class);
+            ticketStore.put(t.getId().value(), t.toSnapshot());
+            return t;
+        });
+        when(ticketRepository.findById(any(TicketId.class))).thenAnswer(inv -> {
+            TicketId id = inv.getArgument(0, TicketId.class);
+            return Optional.ofNullable(ticketStore.get(id.value())).map(Ticket::restore);
+        });
+        when(ticketRepository.findAll()).thenAnswer(inv ->
+                ticketStore.values().stream().map(Ticket::restore).toList());
+
+        when(userRepository.findByEmail(anyString())).thenAnswer(inv -> {
+            String email = inv.getArgument(0, String.class).trim().toLowerCase();
+            return Optional.ofNullable(userStoreByEmail.get(email));
+        });
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0, User.class);
+            userStoreByEmail.put(u.getEmail().toLowerCase(), u);
+            return u;
+        });
+
         Clock fixedClock = Clock.fixed(Instant.parse("2026-10-13T10:00:00Z"), ZoneOffset.UTC);
         TicketCodeGenerator codeGenerator = new DefaultTicketCodeGenerator(fixedClock);
         SmtpEmailNotificationAdapter emailAdapter = new SmtpEmailNotificationAdapter();
+        BCryptPasswordHasherAdapter passwordHasher = new BCryptPasswordHasherAdapter();
+        HmacJwtTokenProviderAdapter tokenProvider = new HmacJwtTokenProviderAdapter(
+                "test-secret-signing-key-2026-eventhub-hmac-sha256",
+                fixedClock
+        );
 
+        User organizerUser = new User(
+                UserId.of("usr-org-1"),
+                "Anna Organizer",
+                "organizer@eventhub.hu",
+                passwordHasher.hash("organizer123"),
+                UserRole.ORGANIZER,
+                fixedClock.instant()
+        );
+        userRepository.save(organizerUser);
+        organizerJwtToken = tokenProvider.generateToken(organizerUser);
+
+        User participantUser = new User(
+                UserId.of("usr-part-1"),
+                "Péter Participant",
+                "participant@eventhub.hu",
+                passwordHasher.hash("participant123"),
+                UserRole.PARTICIPANT,
+                fixedClock.instant()
+        );
+        userRepository.save(participantUser);
+        participantJwtToken = tokenProvider.generateToken(participantUser);
+
+        AuthService authService = new AuthService(userRepository, passwordHasher, tokenProvider, fixedClock);
         BookTicketService bookTicketService = new BookTicketService(
                 eventRepository, ticketRepository, codeGenerator, fixedClock, emailAdapter);
         CancelTicketService cancelTicketService = new CancelTicketService(eventRepository, ticketRepository);
@@ -44,14 +126,21 @@ class EventControllerIntegrationTest {
         GetTicketsService getTicketsService = new GetTicketsService(ticketRepository);
         ResetEventsService resetEventsService = new ResetEventsService(eventRepository, ticketRepository);
 
+        AuthController authController = new AuthController(authService, tokenProvider);
         EventController eventController = new EventController(
-                getEventsService, getEventsService, resetEventsService, createEventService, addTicketTypeService);
+                getEventsService, getEventsService, resetEventsService, createEventService, addTicketTypeService, tokenProvider);
         TicketController ticketController = new TicketController(
                 bookTicketService, getTicketsService, cancelTicketService);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(eventController, ticketController)
+        mockMvc = MockMvcBuilders.standaloneSetup(authController, eventController, ticketController)
+                .addFilters(new JwtAuthenticationFilter(tokenProvider))
                 .setControllerAdvice(new EventHubExceptionHandler())
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -86,8 +175,27 @@ class EventControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/events should require ORGANIZER role (403 for PARTICIPANT, 201 for ORGANIZER)")
-    void shouldEnforceOrganizerRoleForCreatingEvent() throws Exception {
+    @DisplayName("POST /api/auth/login should authenticate user and return signed JWT token")
+    void shouldLoginAndReturnJwt() throws Exception {
+        String loginJson = """
+                {
+                    "email": "organizer@eventhub.hu",
+                    "password": "organizer123"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token", notNullValue()))
+                .andExpect(jsonPath("$.user.email", is("organizer@eventhub.hu")))
+                .andExpect(jsonPath("$.user.role", is("ORGANIZER")));
+    }
+
+    @Test
+    @DisplayName("POST /api/events should validate JWT on server side (403 for PARTICIPANT JWT, 201 for ORGANIZER JWT)")
+    void shouldEnforceServerSideJwtRoleForCreatingEvent() throws Exception {
         String createEventJson = """
                 {
                     "title": "Cloud Native Days Budapest",
@@ -103,17 +211,20 @@ class EventControllerIntegrationTest {
                 }
                 """;
 
-        // 1. Attempt as PARTICIPANT -> 403 Forbidden
+        // 1. Attempt with PARTICIPANT JWT -> 403 Forbidden (even if client tries to send X-User-Role: ORGANIZER!)
         mockMvc.perform(post("/api/events")
-                        .header("X-User-Role", "PARTICIPANT")
+                        .header("Authorization", "Bearer " + participantJwtToken)
+                        .header("X-User-Role", "ORGANIZER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createEventJson))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status", is(403)));
 
-        // 2. Attempt as ORGANIZER -> 201 Created
+        SecurityContextHolder.clearContext();
+
+        // 2. Attempt with server-signed ORGANIZER JWT -> 201 Created
         mockMvc.perform(post("/api/events")
-                        .header("X-User-Role", "ORGANIZER")
+                        .header("Authorization", "Bearer " + organizerJwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createEventJson))
                 .andExpect(status().isCreated())

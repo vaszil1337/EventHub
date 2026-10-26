@@ -14,20 +14,24 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
-import { UserRole } from '@/features/events/types';
+import { AuthUser } from '@/features/auth/types';
 
 interface NavbarProps {
   totalTicketsCount?: number;
-  userRole?: UserRole;
-  onRoleChange?: (role: UserRole) => void;
+  user?: AuthUser | null;
+  onOpenAuthDialog?: () => void;
+  onLogout?: () => void;
   onOpenOrganizerDialog?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   totalTicketsCount = 0,
-  userRole = 'PARTICIPANT',
-  onRoleChange,
+  user = null,
+  onOpenAuthDialog,
+  onLogout,
   onOpenOrganizerDialog,
 }) => {
   return (
@@ -98,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Box>
           </Box>
 
-          {/* Navigation Links & Role Switcher */}
+          {/* Navigation Links & Authenticated User Controls */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Button
               component={RouterNavLink}
@@ -166,8 +170,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </Button>
 
-            {/* Organizer Action Button */}
-            {userRole === 'ORGANIZER' && onOpenOrganizerDialog && (
+            {/* Organizer Action Button (Visible when authenticated as ORGANIZER) */}
+            {user?.role === 'ORGANIZER' && onOpenOrganizerDialog && (
               <Button
                 variant="contained"
                 size="small"
@@ -186,58 +190,83 @@ export const Navbar: React.FC<NavbarProps> = ({
               </Button>
             )}
 
-            {/* Role Switcher Pill */}
-            {onRoleChange && (
+            {/* Authenticated User Badge or Sign In Button */}
+            {user ? (
               <Box
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  p: 0.35,
+                  gap: 1,
+                  pl: 1.25,
+                  pr: 0.5,
+                  py: 0.35,
                   borderRadius: '8px',
                   bgcolor: 'action.hover',
                   border: '1px solid',
                   borderColor: 'divider',
                   ml: 0.5,
                 }}
-                data-testid="role-switcher"
+                data-testid="authenticated-user-badge"
               >
-                <Button
-                  size="small"
-                  startIcon={<PersonOutlineIcon sx={{ fontSize: 15 }} />}
-                  onClick={() => onRoleChange('PARTICIPANT')}
-                  sx={{
-                    minWidth: 'auto',
-                    px: 1.25,
-                    py: 0.35,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    bgcolor: userRole === 'PARTICIPANT' ? 'background.paper' : 'transparent',
-                    color: userRole === 'PARTICIPANT' ? 'text.primary' : 'text.secondary',
-                    boxShadow: userRole === 'PARTICIPANT' ? 1 : 0,
-                  }}
-                >
-                  Participant
-                </Button>
-                <Button
-                  size="small"
-                  startIcon={<AdminPanelSettingsOutlinedIcon sx={{ fontSize: 15 }} />}
-                  onClick={() => onRoleChange('ORGANIZER')}
-                  sx={{
-                    minWidth: 'auto',
-                    px: 1.25,
-                    py: 0.35,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    bgcolor: userRole === 'ORGANIZER' ? 'background.paper' : 'transparent',
-                    color: userRole === 'ORGANIZER' ? 'text.primary' : 'text.secondary',
-                    boxShadow: userRole === 'ORGANIZER' ? 1 : 0,
-                  }}
-                >
-                  Organizer
-                </Button>
+                {user.role === 'ORGANIZER' ? (
+                  <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                ) : (
+                  <PersonOutlineIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                )}
+                <Box sx={{ lineHeight: 1.1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', display: 'block' }}>
+                    {user.fullName}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600 }}>
+                    {user.role} • JWT Verified
+                  </Typography>
+                </Box>
+                {onLogout && (
+                  <Button
+                    size="small"
+                    onClick={onLogout}
+                    startIcon={<LogoutOutlinedIcon sx={{ fontSize: 14 }} />}
+                    sx={{
+                      minWidth: 'auto',
+                      px: 1,
+                      py: 0.35,
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: 'background.paper', color: 'error.main' },
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                )}
               </Box>
+            ) : (
+              onOpenAuthDialog && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<LoginOutlinedIcon sx={{ fontSize: 16 }} />}
+                  onClick={onOpenAuthDialog}
+                  data-testid="open-auth-dialog-button"
+                  sx={{
+                    ml: 0.5,
+                    borderRadius: '8px',
+                    borderColor: 'divider',
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    fontSize: '0.8125rem',
+                    px: 1.5,
+                    py: 0.6,
+                    '&:hover': {
+                      borderColor: 'text.secondary',
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  Sign In
+                </Button>
+              )
             )}
           </Box>
         </Toolbar>

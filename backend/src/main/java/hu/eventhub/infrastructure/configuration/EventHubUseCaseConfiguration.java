@@ -2,10 +2,13 @@ package hu.eventhub.infrastructure.configuration;
 
 import hu.eventhub.application.port.in.*;
 import hu.eventhub.application.port.out.EmailNotificationPort;
+import hu.eventhub.application.port.out.PasswordHasherPort;
+import hu.eventhub.application.port.out.TokenProviderPort;
 import hu.eventhub.application.service.*;
 import hu.eventhub.domain.model.EventRepository;
 import hu.eventhub.domain.model.TicketCodeGenerator;
 import hu.eventhub.domain.model.TicketRepository;
+import hu.eventhub.domain.model.UserRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +28,16 @@ public class EventHubUseCaseConfiguration {
     @Bean
     TicketCodeGenerator ticketCodeGenerator(Clock clock) {
         return new DefaultTicketCodeGenerator(clock);
+    }
+
+    @Bean
+    AuthUseCase authUseCase(
+            UserRepository userRepository,
+            PasswordHasherPort passwordHasher,
+            TokenProviderPort tokenProvider,
+            Clock clock
+    ) {
+        return new AuthService(userRepository, passwordHasher, tokenProvider, clock);
     }
 
     @Bean

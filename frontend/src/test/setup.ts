@@ -24,6 +24,41 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
   const url = typeof input === 'string' ? input : input.toString();
   const method = init?.method?.toUpperCase() || 'GET';
 
+  // POST /api/auth/login
+  if (url === '/api/auth/login' && method === 'POST') {
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    const isOrganizer = String(body.email || '').includes('organizer');
+    return new Response(
+      JSON.stringify({
+        token: isOrganizer ? 'jwt-organizer-token' : 'jwt-participant-token',
+        user: {
+          id: isOrganizer ? 'usr-org-1' : 'usr-part-1',
+          fullName: isOrganizer ? 'Anna Kovács (Organizer)' : 'Péter Nagy (Participant)',
+          email: body.email,
+          role: isOrganizer ? 'ORGANIZER' : 'PARTICIPANT',
+        },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // POST /api/auth/register
+  if (url === '/api/auth/register' && method === 'POST') {
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    return new Response(
+      JSON.stringify({
+        token: 'jwt-registered-token',
+        user: {
+          id: `usr-${Date.now()}`,
+          fullName: body.fullName,
+          email: body.email,
+          role: body.role || 'PARTICIPANT',
+        },
+      }),
+      { status: 201, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   // GET /api/events
   if (url === '/api/events' && method === 'GET') {
     return new Response(JSON.stringify(mockEvents), {

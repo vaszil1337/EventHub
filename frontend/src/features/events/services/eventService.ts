@@ -1,9 +1,10 @@
-import { Event, CreateEventInput, AddTicketTypeInput, UserRole } from '@/features/events/types';
+import { Event, CreateEventInput, AddTicketTypeInput } from '@/features/events/types';
 import { apiFetch } from '@/shared/services/apiClient';
 
 /**
  * EventService handles all data operations for Events.
  * Communicates directly with the PostgreSQL-backed Spring Boot REST API (/api/events).
+ * Role authorization is validated server-side from the signed JWT Bearer token.
  */
 export const eventService = {
   /**
@@ -28,27 +29,21 @@ export const eventService = {
   },
 
   /**
-   * Creates a new event (requires ORGANIZER role).
+   * Creates a new event (requires ORGANIZER JWT token).
    */
-  async createEvent(input: CreateEventInput, role: UserRole = 'ORGANIZER'): Promise<Event> {
+  async createEvent(input: CreateEventInput): Promise<Event> {
     return apiFetch<Event>('/events', {
       method: 'POST',
-      headers: {
-        'X-User-Role': role,
-      },
       body: JSON.stringify(input),
     });
   },
 
   /**
-   * Adds a new ticket type tier to an existing event (requires ORGANIZER role).
+   * Adds a new ticket type tier to an existing event (requires ORGANIZER JWT token).
    */
-  async addTicketType(eventId: string, input: AddTicketTypeInput, role: UserRole = 'ORGANIZER'): Promise<Event> {
+  async addTicketType(eventId: string, input: AddTicketTypeInput): Promise<Event> {
     return apiFetch<Event>(`/events/${eventId}/ticket-types`, {
       method: 'POST',
-      headers: {
-        'X-User-Role': role,
-      },
       body: JSON.stringify(input),
     });
   },

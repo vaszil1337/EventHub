@@ -13,12 +13,14 @@ import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumb
 import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { useTicketBooking } from '@/features/ticket-booking/hooks/useTicketBooking';
+import { AuthUser } from '@/features/auth/types';
 import { BookingForm } from './BookingForm';
 import { BookingSuccess } from './BookingSuccess';
 
 interface BookingDialogProps {
   open: boolean;
   event: Event | null;
+  currentUser?: AuthUser | null;
   onClose: () => void;
   onBookingSuccess?: (ticket: Ticket) => void;
 }
@@ -26,6 +28,7 @@ interface BookingDialogProps {
 export const BookingDialog: React.FC<BookingDialogProps> = ({
   open,
   event,
+  currentUser,
   onClose,
   onBookingSuccess,
 }) => {
@@ -49,10 +52,14 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   useEffect(() => {
     if (open && event) {
       openBooking(event);
+      if (currentUser) {
+        setParticipantName(currentUser.fullName);
+        setParticipantEmail(currentUser.email);
+      }
     } else if (!open) {
       closeBooking();
     }
-  }, [open, event, openBooking, closeBooking]);
+  }, [open, event, currentUser, openBooking, closeBooking, setParticipantName, setParticipantEmail]);
 
   const handleClose = () => {
     closeBooking();

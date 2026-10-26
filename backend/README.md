@@ -68,19 +68,24 @@ backend/
     │   │       │   ├── DefaultTicketCodeGenerator.java   # Kódgenerátor megvalósítás
     │   │       │   └── WebCorsConfiguration.java        # CORS beállítás (localhost:5173 engedélyezése)
     │   │       │
-    │   │       ├── persistence/                         # Kimenő perzisztencia adapterek
+    │   │       ├── persistence/                         # Kimenő PostgreSQL perzisztencia adapterek
     │   │       │   ├── jpa/
     │   │       │   │   ├── EventJpaEntity.java
+    │   │       │   │   ├── TicketTypeJpaEntity.java
     │   │       │   │   ├── TicketJpaEntity.java
+    │   │       │   │   ├── UserJpaEntity.java
     │   │       │   │   ├── EventSpringDataRepository.java
+    │   │       │   │   ├── TicketTypeSpringDataRepository.java
     │   │       │   │   ├── TicketSpringDataRepository.java
+    │   │       │   │   ├── UserSpringDataRepository.java
     │   │       │   │   ├── EventPersistenceMapper.java
     │   │       │   │   ├── TicketPersistenceMapper.java
+    │   │       │   │   ├── UserPersistenceMapper.java
     │   │       │   │   ├── JpaEventRepositoryAdapter.java
-    │   │       │   │   └── JpaTicketRepositoryAdapter.java
+    │   │       │   │   ├── JpaTicketRepositoryAdapter.java
+    │   │       │   │   └── JpaUserRepositoryAdapter.java
     │   │       │   │
-    │   │       │   ├── InMemoryEventRepository.java
-    │   │       │   │── InMemoryTicketRepository.java
+    │   │       │   ├── DatabaseSeeder.java
     │   │       │   └── SampleEventData.java
     │   │       │
     │   │       └── presentation/web/                    # Bemenő REST Adapter
@@ -151,10 +156,13 @@ mvn spring-boot:run
 
 | Metódus | Útvonal | Leírás | Siker Kód | Hiba Kód |
 |---|---|---|---|---|
+| `POST` | `/api/auth/register` | Felhasználó regisztráció + HS256 JWT token kiadás | `201 Created` | `409 Conflict`, `400 Bad Request` |
+| `POST` | `/api/auth/login` | Bejelentkezés + HS256 JWT token kiadás | `200 OK` | `401 Unauthorized` |
+| `GET` | `/api/auth/me` | Aktuális bejelentkezett profil (`Authorization: Bearer <jwt>`) | `200 OK` | `401 Unauthorized` |
 | `GET` | `/api/events` | Összes esemény listázása (jegytípusokkal és dinamikus árakkal) | `200 OK` | - |
 | `GET` | `/api/events/{id}` | Egyedi esemény lekérése | `200 OK` | `404 Not Found` |
-| `POST` | `/api/events` | Új esemény létrehozása (`X-User-Role: ORGANIZER` kötelező) | `201 Created` | `403 Forbidden`, `400 Bad Request` |
-| `POST` | `/api/events/{id}/ticket-types` | Új jegytípus hozzáadása eseményhez (`X-User-Role: ORGANIZER`) | `201 Created` | `403 Forbidden`, `404 Not Found` |
+| `POST` | `/api/events` | Új esemény létrehozása (`ORGANIZER` JWT token kötelező) | `201 Created` | `403 Forbidden`, `400 Bad Request` |
+| `POST` | `/api/events/{id}/ticket-types` | Új jegytípus hozzáadása eseményhez (`ORGANIZER` JWT token) | `201 Created` | `403 Forbidden`, `404 Not Found` |
 | `POST` | `/api/events/reset` | Események és jegyek alaphelyzetbe állítása | `200 OK` | - |
 | `POST` | `/api/tickets/book` | Jegy foglalása (jegytípus, dinamikus ár & e-mail értesítés) | `201 Created` | `409 Conflict` (teltház), `400 Bad Request` |
 | `POST` | `/api/tickets/{ticketId}/cancel` | Jegyrendelés lemondása és kapacitás felszabadítása | `200 OK` | `404 Not Found`, `400 Bad Request` |

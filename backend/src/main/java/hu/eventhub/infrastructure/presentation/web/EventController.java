@@ -1,6 +1,8 @@
 package hu.eventhub.infrastructure.presentation.web;
 
 import hu.eventhub.application.port.in.*;
+import hu.eventhub.application.port.out.AuthenticatedPrincipal;
+import hu.eventhub.application.port.out.TokenProviderPort;
 import hu.eventhub.domain.exception.AccessDeniedException;
 import hu.eventhub.domain.exception.EventNotFoundException;
 import hu.eventhub.domain.model.Event;
@@ -10,6 +12,8 @@ import hu.eventhub.domain.model.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -26,6 +30,7 @@ public class EventController {
     private final ResetEventsUseCase resetEventsUseCase;
     private final CreateEventUseCase createEventUseCase;
     private final AddTicketTypeUseCase addTicketTypeUseCase;
+    private final TokenProviderPort tokenProvider;
 
     @Autowired
     public EventController(
@@ -33,13 +38,25 @@ public class EventController {
             GetEventByIdUseCase getEventByIdUseCase,
             ResetEventsUseCase resetEventsUseCase,
             CreateEventUseCase createEventUseCase,
-            AddTicketTypeUseCase addTicketTypeUseCase
+            AddTicketTypeUseCase addTicketTypeUseCase,
+            TokenProviderPort tokenProvider
     ) {
         this.getEventsUseCase = Objects.requireNonNull(getEventsUseCase, "getEventsUseCase cannot be null");
         this.getEventByIdUseCase = Objects.requireNonNull(getEventByIdUseCase, "getEventByIdUseCase cannot be null");
         this.resetEventsUseCase = Objects.requireNonNull(resetEventsUseCase, "resetEventsUseCase cannot be null");
         this.createEventUseCase = createEventUseCase;
         this.addTicketTypeUseCase = addTicketTypeUseCase;
+        this.tokenProvider = tokenProvider;
+    }
+
+    public EventController(
+            GetEventsUseCase getEventsUseCase,
+            GetEventByIdUseCase getEventByIdUseCase,
+            ResetEventsUseCase resetEventsUseCase,
+            CreateEventUseCase createEventUseCase,
+            AddTicketTypeUseCase addTicketTypeUseCase
+    ) {
+        this(getEventsUseCase, getEventByIdUseCase, resetEventsUseCase, createEventUseCase, addTicketTypeUseCase, null);
     }
 
     public EventController(
@@ -47,7 +64,7 @@ public class EventController {
             GetEventByIdUseCase getEventByIdUseCase,
             ResetEventsUseCase resetEventsUseCase
     ) {
-        this(getEventsUseCase, getEventByIdUseCase, resetEventsUseCase, null, null);
+        this(getEventsUseCase, getEventByIdUseCase, resetEventsUseCase, null, null, null);
     }
 
     @GetMapping
@@ -66,10 +83,10 @@ public class EventController {
 
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(
-            @RequestHeader(value = "X-User-Role", required = false, defaultValue = "PARTICIPANT") String roleHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestBody CreateEventRequest request
     ) {
-        requireOrganizerRole(roleHeader, "Only ORGANIZER role is authorized to create events.");
+        requireOrganizerRole(authorizationHeader, "Only authenticated ORGANIZER users are authorized to create events.");
         if (createEventUseCase == null) {
             throw new IllegalStateException("CreateEventUseCase is not configured");
         }
@@ -95,10 +112,10 @@ public class EventController {
     @PostMapping("/{id}/ticket-types")
     public ResponseEntity<EventResponse> addTicketType(
             @PathVariable("id") String id,
-            @RequestHeader(value = "X-User-Role", required = false, defaultValue = "PARTICIPANT") String roleHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestBody AddTicketTypeRequest request
     ) {
-        requireOrganizerRole(roleHeader, "Only ORGANIZER role is authorized to add ticket types.");
+        requireOrganizerRole(authorizationHeader, "Only authenticated ORGANIZER users are authorized to add ticket types.");
         if (addTicketTypeUseCase == null) {
             throw new IllegalStateException("AddTicketTypeUseCase is not configured");
         }
@@ -133,10 +150,24 @@ public class EventController {
         }
     }
 
-    private void requireOrganizerRole(String roleHeader, String message) {
-        UserRole role = UserRole.fromHeader(roleHeader);
-        if (role != UserRole.ORGANIZER) {
+    private void requireOrganizerRole(String authorizationHeader, String message) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof AuthenticatedPrincipal principal) {
+            if (principal.role() == UserRole.ORGANIZER) {
+                return;
+            }
             throw new AccessDeniedException(message);
         }
+
+        if (tokenProvider != null && authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7).trim();
+            AuthenticatedPrincipal principal = tokenProvider.validateAndExtract(token)
+                    .orElseThrow(() -> new AccessDeniedException(message));
+            if (principal.role() == UserRole.ORGANIZER) {
+                return;
+            }
+        }
+
+        throw new AccessDeniedException(message);
     }
 }

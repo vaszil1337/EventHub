@@ -6,14 +6,18 @@ import { NotificationSnackbar, NotificationState } from '@/shared/ui/Notificatio
 import { useEvents } from '@/features/events/hooks/useEvents';
 import { BookingDialog } from '@/features/ticket-booking/components/BookingDialog';
 import { OrganizerEventDialog } from '@/features/events/components/OrganizerEventDialog';
-import { Event, UserRole } from '@/features/events/types';
+import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
+import { AuthDialog } from '@/features/auth/components/AuthDialog';
+import { AuthUser } from '@/features/auth/types';
+import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { ticketService } from '@/features/ticket-booking/services/ticketService';
 import { EventsPage } from '@/pages/EventsPage';
 import { EventDetailPage } from '@/pages/EventDetailPage';
 import { TicketsPage } from '@/pages/TicketsPage';
 
-export function App() {
+function AppShell() {
+  const { user, logout } = useAuth();
   const {
     events,
     allEvents,
@@ -27,7 +31,7 @@ export function App() {
     refreshEvents,
   } = useEvents();
 
-  const [userRole, setUserRole] = useState<UserRole>('PARTICIPANT');
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState<boolean>(false);
   const [isOrganizerDialogOpen, setIsOrganizerDialogOpen] = useState<boolean>(false);
   const [selectedEventForBooking, setSelectedEventForBooking] = useState<Event | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
@@ -93,6 +97,23 @@ export function App() {
     });
   };
 
+  const handleAuthSuccess = (authenticatedUser: AuthUser) => {
+    setNotification({
+      open: true,
+      message: `Signed in as ${authenticatedUser.fullName} (${authenticatedUser.role}).`,
+      severity: 'success',
+    });
+  };
+
+  const handleLogout = () => {
+    logout();
+    setNotification({
+      open: true,
+      message: 'Signed out successfully.',
+      severity: 'info',
+    });
+  };
+
   const handleCloseNotification = () => {
     setNotification((prev) => ({ ...prev, open: false }));
   };
@@ -102,8 +123,9 @@ export function App() {
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
         <Navbar
           totalTicketsCount={totalTickets}
-          userRole={userRole}
-          onRoleChange={setUserRole}
+          user={user}
+          onOpenAuthDialog={() => setIsAuthDialogOpen(true)}
+          onLogout={handleLogout}
           onOpenOrganizerDialog={() => setIsOrganizerDialogOpen(true)}
         />
 
@@ -141,7 +163,7 @@ export function App() {
               element={
                 <TicketsPage
                   key={bookingRefreshKey}
-                  userRole={userRole}
+                  userRole={user?.role || 'PARTICIPANT'}
                   onTicketCancelled={handleTicketCancelled}
                 />
               }
@@ -153,8 +175,16 @@ export function App() {
         <BookingDialog
           open={isBookingOpen}
           event={selectedEventForBooking}
+          currentUser={user}
           onClose={handleCloseBooking}
           onBookingSuccess={handleBookingSuccess}
+        />
+
+        {/* Authentication Modal */}
+        <AuthDialog
+          open={isAuthDialogOpen}
+          onClose={() => setIsAuthDialogOpen(false)}
+          onAuthSuccess={handleAuthSuccess}
         />
 
         {/* Organizer Management Modal */}
@@ -162,7 +192,6 @@ export function App() {
           open={isOrganizerDialogOpen}
           onClose={() => setIsOrganizerDialogOpen(false)}
           events={allEvents}
-          userRole={userRole}
           onEventCreatedOrUpdated={handleOrganizerSuccess}
         />
 
@@ -191,6 +220,14 @@ export function App() {
         </Box>
       </Box>
     </BrowserRouter>
+  );
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }
 

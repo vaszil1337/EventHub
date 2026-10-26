@@ -5,8 +5,7 @@ import hu.eventhub.domain.exception.CapacityExceededException;
 import hu.eventhub.domain.exception.EventNotFoundException;
 import hu.eventhub.domain.model.*;
 import hu.eventhub.infrastructure.notification.SmtpEmailNotificationAdapter;
-import hu.eventhub.infrastructure.persistence.InMemoryEventRepository;
-import hu.eventhub.infrastructure.persistence.InMemoryTicketRepository;
+import hu.eventhub.infrastructure.persistence.SampleEventData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,13 +14,17 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class BookTicketServiceTest {
 
-    private InMemoryEventRepository eventRepository;
-    private InMemoryTicketRepository ticketRepository;
+    private EventRepository eventRepository;
+    private TicketRepository ticketRepository;
     private SmtpEmailNotificationAdapter emailNotificationAdapter;
     private BookTicketService bookTicketService;
     private CancelTicketService cancelTicketService;
@@ -29,8 +32,39 @@ class BookTicketServiceTest {
 
     @BeforeEach
     void setUp() {
-        eventRepository = new InMemoryEventRepository();
-        ticketRepository = new InMemoryTicketRepository();
+        eventRepository = mock(EventRepository.class);
+        ticketRepository = mock(TicketRepository.class);
+
+        Map<String, EventSnapshot> eventStore = new LinkedHashMap<>();
+        for (Event seed : SampleEventData.initialEvents()) {
+            eventStore.put(seed.getId().value(), seed.toSnapshot());
+        }
+        Map<String, TicketSnapshot> ticketStore = new LinkedHashMap<>();
+
+        when(eventRepository.findAll()).thenAnswer(inv ->
+                eventStore.values().stream().map(Event::restore).toList());
+        when(eventRepository.findById(any(EventId.class))).thenAnswer(inv -> {
+            EventId id = inv.getArgument(0, EventId.class);
+            return Optional.ofNullable(eventStore.get(id.value())).map(Event::restore);
+        });
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> {
+            Event e = inv.getArgument(0, Event.class);
+            eventStore.put(e.getId().value(), e.toSnapshot());
+            return e;
+        });
+
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> {
+            Ticket t = inv.getArgument(0, Ticket.class);
+            ticketStore.put(t.getId().value(), t.toSnapshot());
+            return t;
+        });
+        when(ticketRepository.findById(any(TicketId.class))).thenAnswer(inv -> {
+            TicketId id = inv.getArgument(0, TicketId.class);
+            return Optional.ofNullable(ticketStore.get(id.value())).map(Ticket::restore);
+        });
+        when(ticketRepository.findAll()).thenAnswer(inv ->
+                ticketStore.values().stream().map(Ticket::restore).toList());
+
         emailNotificationAdapter = new SmtpEmailNotificationAdapter();
         fixedClock = Clock.fixed(Instant.parse("2026-10-13T10:00:00Z"), ZoneOffset.UTC);
         TicketCodeGenerator codeGenerator = () -> TicketCode.of("EVT-2026-TEST");

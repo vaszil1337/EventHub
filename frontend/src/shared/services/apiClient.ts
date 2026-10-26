@@ -1,19 +1,36 @@
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
+let currentAuthToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  currentAuthToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return currentAuthToken;
+}
+
 /**
  * Universal fetch wrapper for communicating with the backend REST API.
+ * Automatically attaches the JWT Bearer token when a user is authenticated.
  */
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = endpoint.startsWith('http')
     ? endpoint
     : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((options?.headers as Record<string, string>) || {}),
+  };
+
+  if (currentAuthToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${currentAuthToken}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {

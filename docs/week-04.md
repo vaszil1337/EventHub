@@ -18,9 +18,16 @@ A 4. hét célja a tantárgyi követelménytáblázatban rögzített összes **E
    - `AddTicketTypeUseCase`: Új jegytípus hozzáadása meglévő eseményhez.
    - `BookTicketUseCase`: Jegy rendelése jegytípus-kvóta és helyszín-kapacitás ellenőrzéssel, dinamikus árkalkulációval és e-mail értesítéssel.
    - `CancelTicketUseCase`: Jegyrendelés lemondása (`status = CANCELLED`), amely felszabadítja a lefoglalt helyet mind az `Event`, mind a `TicketType` szintjén.
-4. **Szerepkörök és Jogosultságkezelés (`UserRole`)**:
-   - `PARTICIPANT` (Résztvevő): Események böngészése, jegyvásárlás jegytípus választással, saját jegyek szűrése és lemondása.
-   - `ORGANIZER` (Szervező): Új események létrehozása (`POST /api/events`), új jegytípusok felvétele (`POST /api/events/{id}/ticket-types`), összes foglalás áttekintése. A backend az `X-User-Role` fejléc alapján ellenőrzi a jogosultságot (`403 Forbidden`, ha `PARTICIPANT` próbál szervezői műveletet végezni).
+4. **Szerepkörök, Spring Security + JWT & React `AuthContext` (`UserRole`)**:
+   - **Domain & Perzisztencia**: `User` entitás (`UserId`, `fullName`, `email`, `passwordHash`, `UserRole`) és PostgreSQL `users` tábla (`UserJpaEntity`). Induláskor a `DatabaseSeeder` létrehozza a két demó fiókot (`organizer@eventhub.hu` / `organizer123` és `participant@eventhub.hu` / `participant123`).
+   - **Szerveroldali JWT validáció (`Spring Security`)**:
+     - `BCryptPasswordHasherAdapter`: BCrypt jelszó-hashelés.
+     - `HmacJwtTokenProviderAdapter`: RFC 7519 szabványú HMAC-SHA256 (`HS256`) kriptográfiailag aláírt JWT token generálás és időállandó (`MessageDigest.isEqual`) aláírás-ellenőrzés.
+     - `JwtAuthenticationFilter` + `SecurityConfiguration`: Stateless Spring Security filter lánc, amely az `Authorization: Bearer <token>` fejlécből kinyeri és ellenőrzi a tokent, majd beállítja a `SecurityContextHolder`-be. A kliens által küldött fejlécek nem hamisíthatók (`403 Forbidden`, ha `PARTICIPANT` tokennel próbálnak szervezői végpontot hívni).
+   - **Frontend (`AuthContext` + `AuthDialog`)**:
+     - Globális `AuthProvider` és `useAuth()` hook, amely kezeli a bejelentkezett felhasználót és a JWT tokent.
+     - Az `apiClient.ts` automatikusan csatolja az `Authorization: Bearer <token>` fejlécet minden kéréshez.
+     - Bejelentkezett felhasználónál a jegyfoglalási űrlap automatikusan kitölti a nevet és e-mail címet.
 5. **Külső Integráció Tesztelt Hibakezeléssel (`EmailNotificationPort`)**:
    - Kimenő port (`EmailNotificationPort`) és adapter (`SmtpEmailNotificationAdapter`) a jegyvásárlási visszaigazoló e-mailek küldésére.
    - **Reziliens hibakezelés**: Ha a külső e-mail szolgáltató hibát dob (`EmailDeliveryException` – pl. szolgáltatói kiesés vagy `@fail-email.test` tesztcím esetén), a `BookTicketService` elkapja a kivételt, a jegyet `FAILED_PENDING_RETRY` e-mail státusszal menti el, így a tranzakció és a jegyfoglalás nem vész el.

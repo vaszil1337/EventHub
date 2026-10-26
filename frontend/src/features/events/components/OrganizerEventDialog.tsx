@@ -18,14 +18,13 @@ import {
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
-import { Event, PricingRule, UserRole } from '@/features/events/types';
+import { Event, PricingRule } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 
 interface OrganizerEventDialogProps {
   open: boolean;
   onClose: () => void;
   events: Event[];
-  userRole: UserRole;
   onEventCreatedOrUpdated: (event: Event, actionLabel: string) => void;
 }
 
@@ -33,7 +32,6 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
   open,
   onClose,
   events,
-  userRole,
   onEventCreatedOrUpdated,
 }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -63,20 +61,17 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const created = await eventService.createEvent(
-        {
-          title,
-          description,
-          date,
-          venueName,
-          venueAddress,
-          venueCapacity: Number(venueCapacity),
-          basePriceAmount: Number(basePriceAmount),
-          currency: 'USD',
-          category,
-        },
-        userRole
-      );
+      const created = await eventService.createEvent({
+        title,
+        description,
+        date,
+        venueName,
+        venueAddress,
+        venueCapacity: Number(venueCapacity),
+        basePriceAmount: Number(basePriceAmount),
+        currency: 'USD',
+        category,
+      });
       setTitle('');
       setDescription('');
       setVenueName('');
@@ -95,18 +90,14 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const updated = await eventService.addTicketType(
-        targetEventId,
-        {
-          name: tierName,
-          description: tierDescription,
-          basePriceAmount: Number(tierPrice),
-          currency: 'USD',
-          quota: Number(tierQuota),
-          pricingRule,
-        },
-        userRole
-      );
+      const updated = await eventService.addTicketType(targetEventId, {
+        name: tierName,
+        description: tierDescription,
+        basePriceAmount: Number(tierPrice),
+        currency: 'USD',
+        quota: Number(tierQuota),
+        pricingRule,
+      });
       setTierName('');
       setTierDescription('');
       onEventCreatedOrUpdated(updated, `Added ticket tier "${tierName}" to "${updated.title}".`);
@@ -166,7 +157,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
               Organizer Management Console
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Active Role: {userRole}
+              Protected by Spring Security JWT (ORGANIZER Role)
             </Typography>
           </Box>
         </Box>
