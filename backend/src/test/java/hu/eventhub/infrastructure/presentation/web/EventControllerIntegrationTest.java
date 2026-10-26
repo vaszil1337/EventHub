@@ -74,6 +74,13 @@ class EventControllerIntegrationTest {
         });
         when(ticketRepository.findAll()).thenAnswer(inv ->
                 ticketStore.values().stream().map(Ticket::restore).toList());
+        when(ticketRepository.findByParticipantEmail(anyString())).thenAnswer(inv -> {
+            String email = inv.getArgument(0, String.class);
+            return ticketStore.values().stream()
+                    .filter(t -> t.participantEmail().equalsIgnoreCase(email))
+                    .map(Ticket::restore)
+                    .toList();
+        });
 
         when(userRepository.findByEmail(anyString())).thenAnswer(inv -> {
             String email = inv.getArgument(0, String.class).trim().toLowerCase();
@@ -175,6 +182,27 @@ class EventControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("POST /api/auth/register should create user and return 201 with signed JWT")
+    void shouldRegisterNewUser() throws Exception {
+        String registerJson = """
+                {
+                    "fullName": "Gábor Dénes",
+                    "email": "gabor@eventhub.hu",
+                    "password": "secretPassword",
+                    "role": "PARTICIPANT"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.token", notNullValue()))
+                .andExpect(jsonPath("$.user.email", is("gabor@eventhub.hu")))
+                .andExpect(jsonPath("$.user.fullName", is("Gábor Dénes")));
+    }
+
+    @Test
     @DisplayName("POST /api/auth/login should authenticate user and return signed JWT token")
     void shouldLoginAndReturnJwt() throws Exception {
         String loginJson = """
@@ -191,6 +219,22 @@ class EventControllerIntegrationTest {
                 .andExpect(jsonPath("$.token", notNullValue()))
                 .andExpect(jsonPath("$.user.email", is("organizer@eventhub.hu")))
                 .andExpect(jsonPath("$.user.role", is("ORGANIZER")));
+    }
+
+    @Test
+    @DisplayName("GET /api/auth/me should return authenticated user profile or 401 when unauthenticated")
+    void shouldGetMeOrReject() throws Exception {
+        // Without token -> 401 Unauthorized
+        mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status", is(401)));
+
+        // With valid token -> 200 OK
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + organizerJwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("organizer@eventhub.hu")))
+                .andExpect(jsonPath("$.role", is("ORGANIZER")));
     }
 
     @Test
@@ -211,7 +255,7 @@ class EventControllerIntegrationTest {
                 }
                 """;
 
-        // 1. Attempt with PARTICIPANT JWT -> 403 Forbidden (even if client tries to send X-User-Role: ORGANIZER!)
+        // 1. Attempt with PARTICIPANT JWT -> 403 Forbidden
         mockMvc.perform(post("/api/events")
                         .header("Authorization", "Bearer " + participantJwtToken)
                         .header("X-User-Role", "ORGANIZER")
@@ -231,6 +275,28 @@ class EventControllerIntegrationTest {
                 .andExpect(jsonPath("$.title", is("Cloud Native Days Budapest")))
                 .andExpect(jsonPath("$.venue.capacity", is(200)))
                 .andExpect(jsonPath("$.ticketTypes", hasSize(3)));
+    }
+
+    @Test
+    @DisplayName("POST /api/events/{id}/ticket-types with ORGANIZER JWT should add ticket tier and return 201 Created")
+    void shouldAddTicketTierWithOrganizerJwt() throws Exception {
+        String tierJson = """
+                {
+                    "name": "Student Pass",
+                    "description": "Discounted pass with student ID",
+                    "basePriceAmount": 35.00,
+                    "currency": "USD",
+                    "quota": 20,
+                    "pricingRule": "EARLY_BIRD"
+                }
+                """;
+
+        mockMvc.perform(post("/api/events/evt-tech-summit-2026/ticket-types")
+                        .header("Authorization", "Bearer " + organizerJwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(tierJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ticketTypes", hasSize(4)));
     }
 
     @Test
@@ -325,10 +391,22 @@ class EventControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/tickets should return list of purchased tickets")
-    void shouldReturnTickets() throws Exception {
+    @DisplayName("GET /api/tickets should return list of purchased tickets, optionally filtered by email")
+    void shouldReturnTicketsAndFilterByEmail() throws Exception {
         mockMvc.perform(get("/api/tickets"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        mockMvc.perform(get("/api/tickets?email=unknown@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("POST /api/events/reset should reset events to sample data")
+    void shouldResetEvents() throws Exception {
+        mockMvc.perform(post("/api/events/reset"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", containsString("reset")));
     }
 }
