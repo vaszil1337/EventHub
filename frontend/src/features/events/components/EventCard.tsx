@@ -13,17 +13,22 @@ import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 import { Event } from '@/features/events/types';
 import { CapacityBadge } from './CapacityBadge';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 interface EventCardProps {
   event: Event;
   onBookTicket: (event: Event) => void;
+  onEditEvent?: (event: Event) => void;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEditEvent }) => {
+  const { user } = useAuth();
+  const isOrganizer = user?.role === 'ORGANIZER';
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
 
   return (
@@ -222,28 +227,51 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket }) => 
           Details
         </Button>
 
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={() => onBookTicket(event)}
-          data-testid={`book-button-${event.id}`}
-          endIcon={!isSoldOut ? <ArrowForwardOutlinedIcon sx={{ fontSize: 16 }} /> : <BlockOutlinedIcon sx={{ fontSize: 16 }} />}
-          sx={{
-            py: 0.85,
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            borderRadius: '8px',
-            bgcolor: isSoldOut ? 'error.light' : 'primary.main',
-            color: isSoldOut ? 'error.dark' : 'primary.contrastText',
-            border: isSoldOut ? '1px solid' : 'none',
-            borderColor: 'error.main',
-            '&:hover': {
-              bgcolor: isSoldOut ? 'error.light' : 'primary.light',
-            },
-          }}
-        >
-          {isSoldOut ? 'Sold Out (Capacity Limit)' : 'Book Ticket'}
-        </Button>
+        {isOrganizer ? (
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => onEditEvent && onEditEvent(event)}
+            data-testid={`edit-button-${event.id}`}
+            startIcon={<EditOutlinedIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              py: 0.85,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              borderRadius: '8px',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': {
+                bgcolor: 'primary.light',
+              },
+            }}
+          >
+            Edit Event
+          </Button>
+        ) : (
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => onBookTicket(event)}
+            data-testid={`book-button-${event.id}`}
+            endIcon={!isSoldOut ? <ArrowForwardOutlinedIcon sx={{ fontSize: 16 }} /> : <BlockOutlinedIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              py: 0.85,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              borderRadius: '8px',
+              bgcolor: isSoldOut ? 'error.light' : 'primary.main',
+              color: isSoldOut ? 'error.dark' : 'primary.contrastText',
+              border: isSoldOut ? '1px solid' : 'none',
+              borderColor: 'error.main',
+              '&:hover': {
+                bgcolor: isSoldOut ? 'error.light' : 'primary.light',
+              },
+            }}
+          >
+            {isSoldOut ? 'Sold Out (Capacity Limit)' : 'Book Ticket'}
+          </Button>
+        )}
       </CardActions>
     </Card>
   );

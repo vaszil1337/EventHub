@@ -17,8 +17,6 @@ import {
   alpha,
 } from '@mui/material';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -112,78 +110,97 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '12px',
+          borderRadius: '16px',
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          p: { xs: 1.5, sm: 2.5 },
+          p: { xs: 2.5, sm: 3 },
           boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
+          // Compact, fixed height to prevent layout shifts without excessive whitespace
+          height: { xs: 'auto', sm: 475 },
+          minHeight: { xs: 'auto', sm: 475 },
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
       data-testid="auth-dialog"
     >
       <DialogTitle
+        component="div"
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          pb: 1,
-          pt: 1,
-          px: 1,
+          alignItems: 'flex-start',
+          p: 0,
+          mb: 2,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: '8px',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+        <Box>
+          <Typography
+            variant="h5"
+            component="h2"
+            sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}
           >
-            <LockOutlinedIcon sx={{ fontSize: 18 }} />
-          </Box>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              Account Authentication
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Spring Security • Server-Signed JWT
-            </Typography>
-          </Box>
+            {activeTab === 0 ? 'Welcome back' : 'Create an account'}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {activeTab === 0
+              ? 'Sign in to access your event passes and reservations.'
+              : 'Enter your details to register for EventHub.'}
+          </Typography>
         </Box>
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
+        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary', mt: -0.5, mr: -0.5 }}>
           <CloseOutlinedIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 1, px: 1 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, val) => {
-            setActiveTab(val);
-            setError(null);
-          }}
-          sx={{
-            mb: 2.5,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            minHeight: 40,
-            '& .MuiTab-root': {
-              minHeight: 40,
-              fontWeight: 600,
-              fontSize: '0.85rem',
+      {/* Modern Segmented Control Tab Bar */}
+      <Tabs
+        value={activeTab}
+        onChange={(_, val) => {
+          setActiveTab(val);
+          setError(null);
+        }}
+        sx={{
+          mb: 2,
+          minHeight: 40,
+          bgcolor: 'action.hover',
+          p: 0.5,
+          borderRadius: '8px',
+          '& .MuiTabs-indicator': {
+            display: 'none',
+          },
+          '& .MuiTab-root': {
+            flex: 1,
+            minHeight: 32,
+            py: 0.5,
+            borderRadius: '6px',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            color: 'text.secondary',
+            textTransform: 'none',
+            transition: 'all 0.15s ease-in-out',
+            '&.Mui-selected': {
+              color: 'text.primary',
+              bgcolor: 'background.paper',
+              boxShadow: (theme) => `0 1px 3px ${alpha(theme.palette.common.black, 0.08)}`,
             },
-          }}
-        >
-          <Tab icon={<LockOutlinedIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Sign In" />
-          <Tab icon={<PersonAddAltOutlinedIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Create Account" />
-        </Tabs>
+          },
+        }}
+      >
+        <Tab label="Sign In" />
+        <Tab label="Create Account" />
+      </Tabs>
 
+      <DialogContent
+        sx={{
+          p: 0,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
+        }}
+      >
         {error && (
           <Alert
             severity="error"
@@ -202,7 +219,11 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
         )}
 
         {activeTab === 0 ? (
-          <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+          <Box
+            component="form"
+            onSubmit={handleLogin}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+          >
             <TextField
               required
               type="email"
@@ -229,15 +250,16 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
               variant="contained"
               disabled={loading}
               fullWidth
-              sx={{ py: 1, fontWeight: 600, borderRadius: '8px' }}
+              sx={{ py: 1, fontWeight: 700, borderRadius: '8px', mt: 0.25 }}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             >
-              Sign In with JWT
+              Sign In
             </Button>
 
+            {/* Quick Demo Access positioned compactly below submit */}
             <Divider sx={{ my: 0.5, borderColor: 'divider' }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                QUICK SEEDED ACCOUNTS
+                QUICK DEMO ACCOUNTS
               </Typography>
             </Divider>
 
@@ -254,6 +276,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
                   color: 'text.primary',
                   fontSize: '0.75rem',
                   py: 0.75,
+                  textTransform: 'none',
                   '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
                 }}
               >
@@ -271,6 +294,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
                   color: 'text.primary',
                   fontSize: '0.75rem',
                   py: 0.75,
+                  textTransform: 'none',
                   '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
                 }}
               >
@@ -279,7 +303,11 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             </Box>
           </Box>
         ) : (
-          <Box component="form" onSubmit={handleRegister} sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+          <Box
+            component="form"
+            onSubmit={handleRegister}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+          >
             <TextField
               required
               label="Full Name"
@@ -327,7 +355,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
               variant="contained"
               disabled={loading}
               fullWidth
-              sx={{ py: 1, fontWeight: 600, borderRadius: '8px' }}
+              sx={{ py: 1, fontWeight: 700, borderRadius: '8px', mt: 0.5 }}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             >
               Register & Sign In

@@ -123,11 +123,16 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
           bgcolor: 'background.paper',
           p: { xs: 1.5, sm: 2.5 },
           boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
+          minHeight: 670,
+          maxHeight: 670,
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
       data-testid="organizer-dialog"
     >
       <DialogTitle
+        component="div"
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -154,10 +159,10 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              Organizer Management Console
+              Manage Events
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Protected by Spring Security JWT (ORGANIZER Role)
+              Create new events or add ticket pricing tiers
             </Typography>
           </Box>
         </Box>
@@ -166,7 +171,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 1, px: 1 }}>
+      <DialogContent sx={{ pt: '16px !important', px: 1, flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => {
@@ -174,7 +179,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
             setError(null);
           }}
           sx={{
-            mb: 2.5,
+            mb: 2,
             borderBottom: '1px solid',
             borderColor: 'divider',
             minHeight: 40,
@@ -207,7 +212,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
         )}
 
         {activeTab === 0 ? (
-          <Box component="form" onSubmit={handleCreateEvent} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box component="form" onSubmit={handleCreateEvent} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, pt: 0.5 }}>
             <TextField
               required
               label="Event Title"
@@ -281,7 +286,29 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            {/* Starter Ticket Tiers Info Box */}
+            <Box
+              sx={{
+                p: 1.25,
+                borderRadius: '8px',
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+                <LocalOfferOutlinedIcon sx={{ fontSize: 15, color: 'primary.main' }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Starter Ticket Tiers (Auto-generated)
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.35, fontSize: '0.75rem' }}>
+                Upon creation, 3 starter tiers are automatically generated from your base price (${basePriceAmount} USD) & capacity ({venueCapacity} seats):
+                <strong> Early Bird</strong> (-20%), <strong>Standard</strong>, and <strong>VIP</strong> (+10%). You can add additional custom tiers anytime in the <em>Add Ticket Tier</em> tab!
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 'auto', pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Button onClick={onClose} variant="outlined" sx={{ borderColor: 'divider', color: 'text.primary' }}>
                 Cancel
               </Button>
@@ -296,7 +323,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
             </Box>
           </Box>
         ) : (
-          <Box component="form" onSubmit={handleAddTicketType} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box component="form" onSubmit={handleAddTicketType} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, pt: 0.5 }}>
             <TextField
               select
               required
@@ -368,7 +395,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
               <MenuItem value="FIXED">FIXED (Constant price regardless of occupancy)</MenuItem>
             </TextField>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 'auto', pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Button onClick={onClose} variant="outlined" sx={{ borderColor: 'divider', color: 'text.primary' }}>
                 Cancel
               </Button>

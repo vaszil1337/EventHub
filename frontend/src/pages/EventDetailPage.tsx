@@ -15,16 +15,21 @@ import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Event } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 import { CapacityBadge } from '@/features/events/components/CapacityBadge';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 interface EventDetailPageProps {
   onBookTicket: (event: Event) => void;
+  onEditEvent?: (event: Event) => void;
 }
 
-export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket }) => {
+export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, onEditEvent }) => {
+  const { user } = useAuth();
+  const isOrganizer = user?.role === 'ORGANIZER';
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -243,28 +248,51 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket }
               <CapacityBadge soldCount={event.soldTicketsCount} capacity={event.venue.capacity} />
             </Box>
 
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={isSoldOut ? <BlockOutlinedIcon /> : <ConfirmationNumberOutlinedIcon />}
-              onClick={() => onBookTicket(event)}
-              data-testid="detail-book-ticket-button"
-              sx={{
-                py: 1.5,
-                px: 4,
-                fontWeight: 600,
-                borderRadius: '8px',
-                bgcolor: isSoldOut ? 'error.light' : 'primary.main',
-                color: isSoldOut ? 'error.dark' : 'primary.contrastText',
-                border: isSoldOut ? '1px solid' : 'none',
-                borderColor: 'error.main',
-                '&:hover': {
-                  bgcolor: isSoldOut ? 'error.light' : 'primary.light',
-                },
-              }}
-            >
-              {isSoldOut ? 'Sold Out (Capacity Reached)' : 'Book Ticket Now'}
-            </Button>
+            {isOrganizer ? (
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<EditOutlinedIcon />}
+                onClick={() => onEditEvent && onEditEvent(event)}
+                data-testid="detail-edit-event-button"
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    bgcolor: 'primary.light',
+                  },
+                }}
+              >
+                Edit Event
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={isSoldOut ? <BlockOutlinedIcon /> : <ConfirmationNumberOutlinedIcon />}
+                onClick={() => onBookTicket(event)}
+                data-testid="detail-book-ticket-button"
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  bgcolor: isSoldOut ? 'error.light' : 'primary.main',
+                  color: isSoldOut ? 'error.dark' : 'primary.contrastText',
+                  border: isSoldOut ? '1px solid' : 'none',
+                  borderColor: 'error.main',
+                  '&:hover': {
+                    bgcolor: isSoldOut ? 'error.light' : 'primary.light',
+                  },
+                }}
+              >
+                {isSoldOut ? 'Sold Out (Capacity Reached)' : 'Book Ticket Now'}
+              </Button>
+            )}
           </Box>
         </Box>
       </Paper>

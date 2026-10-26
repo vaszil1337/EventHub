@@ -39,6 +39,16 @@ export const eventService = {
   },
 
   /**
+   * Updates an existing event (requires ORGANIZER JWT token).
+   */
+  async updateEvent(id: string, input: Partial<CreateEventInput>): Promise<Event> {
+    return apiFetch<Event>(`/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
    * Adds a new ticket type tier to an existing event (requires ORGANIZER JWT token).
    */
   async addTicketType(eventId: string, input: AddTicketTypeInput): Promise<Event> {

@@ -24,6 +24,7 @@ interface EventListProps {
   onCategoryChange: (value: string) => void;
   categories: string[];
   onBookTicket: (event: Event) => void;
+  onEditEvent?: (event: Event) => void;
 }
 
 export const EventList: React.FC<EventListProps> = ({
@@ -36,6 +37,7 @@ export const EventList: React.FC<EventListProps> = ({
   onCategoryChange,
   categories,
   onBookTicket,
+  onEditEvent,
 }) => {
   return (
     <Box sx={{ py: 3 }}>
@@ -165,7 +167,7 @@ export const EventList: React.FC<EventListProps> = ({
         <Grid container spacing={3}>
           {events.map((event) => (
             <Grid item xs={12} sm={6} md={4} key={event.id} sx={{ display: 'flex' }}>
-              <EventCard event={event} onBookTicket={onBookTicket} />
+              <EventCard event={event} onBookTicket={onBookTicket} onEditEvent={onEditEvent} />
             </Grid>
           ))}
         </Grid>

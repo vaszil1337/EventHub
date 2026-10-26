@@ -6,6 +6,7 @@ import { NotificationSnackbar, NotificationState } from '@/shared/ui/Notificatio
 import { useEvents } from '@/features/events/hooks/useEvents';
 import { BookingDialog } from '@/features/ticket-booking/components/BookingDialog';
 import { OrganizerEventDialog } from '@/features/events/components/OrganizerEventDialog';
+import { EditEventDialog } from '@/features/events/components/EditEventDialog';
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
 import { AuthDialog } from '@/features/auth/components/AuthDialog';
 import { AuthUser } from '@/features/auth/types';
@@ -35,6 +36,8 @@ function AppShell() {
   const [isOrganizerDialogOpen, setIsOrganizerDialogOpen] = useState<boolean>(false);
   const [selectedEventForBooking, setSelectedEventForBooking] = useState<Event | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
+  const [selectedEventForEdit, setSelectedEventForEdit] = useState<Event | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
   const [totalTickets, setTotalTickets] = useState<number>(0);
   const [bookingRefreshKey, setBookingRefreshKey] = useState<number>(0);
 
@@ -46,17 +49,24 @@ function AppShell() {
 
   const updateTicketCount = useCallback(async () => {
     try {
-      const tickets = await ticketService.getTickets();
+      if (!user) {
+        return;
+      }
+      const tickets = user.role === 'ORGANIZER'
+        ? await ticketService.getTickets()
+        : await ticketService.getTickets(user.email);
       const validTickets = tickets.filter((t) => t.status !== 'CANCELLED');
       setTotalTickets(validTickets.length);
     } catch {
       setTotalTickets(0);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    updateTicketCount();
-  }, [updateTicketCount, bookingRefreshKey]);
+    if (user) {
+      updateTicketCount();
+    }
+  }, [user, updateTicketCount, bookingRefreshKey]);
 
   const handleOpenBooking = (event: Event) => {
     setSelectedEventForBooking(event);
@@ -67,20 +77,48 @@ function AppShell() {
     setIsBookingOpen(false);
   };
 
-  const handleBookingSuccess = async (ticket: Ticket) => {
-    await refreshEvents();
-    await updateTicketCount();
-    setBookingRefreshKey((prev) => prev + 1);
+  const handleOpenEdit = (event: Event) => {
+    setSelectedEventForEdit(event);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditDialogOpen(false);
+    setSelectedEventForEdit(null);
+  };
+
+  const handleEventUpdated = (updated: Event) => {
+    refreshEvents();
     setNotification({
       open: true,
-      message: `Success! Ticket ${ticket.ticketCode} reserved for ${ticket.participantName}.`,
+      message: `Event "${updated.title}" successfully updated.`,
+      severity: 'success',
+    });
+  };
+
+  const handleBookingSuccess = async (ticket: Ticket) => {
+    await refreshEvents();
+    if (user) {
+      await updateTicketCount();
+    } else {
+      setTotalTickets((prev) => prev + 1);
+    }
+    setBookingRefreshKey((prev) => prev + 1);
+    const cleanParticipantName = ticket.participantName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim();
+    setNotification({
+      open: true,
+      message: `Success! Ticket ${ticket.ticketCode} reserved for ${cleanParticipantName}.`,
       severity: 'success',
     });
   };
 
   const handleTicketCancelled = async (ticket: Ticket) => {
     await refreshEvents();
-    await updateTicketCount();
+    if (user) {
+      await updateTicketCount();
+    } else {
+      setTotalTickets((prev) => Math.max(0, prev - 1));
+    }
     setNotification({
       open: true,
       message: `Reservation ${ticket.ticketCode} cancelled. Seat capacity has been released.`,
@@ -98,15 +136,17 @@ function AppShell() {
   };
 
   const handleAuthSuccess = (authenticatedUser: AuthUser) => {
+    const cleanName = authenticatedUser.fullName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim();
     setNotification({
       open: true,
-      message: `Signed in as ${authenticatedUser.fullName} (${authenticatedUser.role}).`,
+      message: `Signed in as ${cleanName} (${authenticatedUser.role}).`,
       severity: 'success',
     });
   };
 
   const handleLogout = () => {
     logout();
+    setTotalTickets(0);
     setNotification({
       open: true,
       message: 'Signed out successfully.',
@@ -147,6 +187,7 @@ function AppShell() {
                   onCategoryChange={setSelectedCategory}
                   categories={categories}
                   onBookTicket={handleOpenBooking}
+                  onEditEvent={handleOpenEdit}
                 />
               }
             />
@@ -154,7 +195,7 @@ function AppShell() {
             {/* Event Detail Page */}
             <Route
               path="/events/:id"
-              element={<EventDetailPage onBookTicket={handleOpenBooking} />}
+              element={<EventDetailPage onBookTicket={handleOpenBooking} onEditEvent={handleOpenEdit} />}
             />
 
             {/* Tickets Page */}
@@ -165,6 +206,7 @@ function AppShell() {
                   key={bookingRefreshKey}
                   userRole={user?.role || 'PARTICIPANT'}
                   onTicketCancelled={handleTicketCancelled}
+                  onOpenAuth={() => setIsAuthDialogOpen(true)}
                 />
               }
             />
@@ -193,6 +235,14 @@ function AppShell() {
           onClose={() => setIsOrganizerDialogOpen(false)}
           events={allEvents}
           onEventCreatedOrUpdated={handleOrganizerSuccess}
+        />
+
+        {/* Organizer Edit Event Modal */}
+        <EditEventDialog
+          open={isEditDialogOpen}
+          event={selectedEventForEdit}
+          onClose={handleCloseEdit}
+          onEventUpdated={handleEventUpdated}
         />
 
         {/* Global Notification Feedback */}

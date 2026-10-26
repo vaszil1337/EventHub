@@ -84,6 +84,11 @@ public class EventHubUseCaseConfiguration {
     }
 
     @Bean
+    UpdateEventUseCase updateEventUseCase(EventRepository eventRepository) {
+        return new UpdateEventService(eventRepository);
+    }
+
+    @Bean
     AddTicketTypeUseCase addTicketTypeUseCase(EventRepository eventRepository) {
         return new AddTicketTypeService(eventRepository);
     }

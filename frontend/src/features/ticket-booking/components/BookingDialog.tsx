@@ -53,7 +53,10 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
     if (open && event) {
       openBooking(event);
       if (currentUser) {
-        setParticipantName(currentUser.fullName);
+        const cleanName = currentUser.fullName
+          ? currentUser.fullName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim()
+          : '';
+        setParticipantName(cleanName);
         setParticipantEmail(currentUser.email);
       }
     } else if (!open) {

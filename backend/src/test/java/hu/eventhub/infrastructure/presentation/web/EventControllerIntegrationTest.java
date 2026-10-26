@@ -137,7 +137,7 @@ class EventControllerIntegrationTest {
         EventController eventController = new EventController(
                 getEventsService, getEventsService, resetEventsService, createEventService, addTicketTypeService, tokenProvider);
         TicketController ticketController = new TicketController(
-                bookTicketService, getTicketsService, cancelTicketService);
+                bookTicketService, getTicketsService, cancelTicketService, tokenProvider);
 
         mockMvc = MockMvcBuilders.standaloneSetup(authController, eventController, ticketController)
                 .addFilters(new JwtAuthenticationFilter(tokenProvider))
@@ -342,7 +342,8 @@ class EventControllerIntegrationTest {
         String body = result.getResponse().getContentAsString();
         String ticketId = body.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
 
-        mockMvc.perform(post("/api/tickets/" + ticketId + "/cancel"))
+        mockMvc.perform(post("/api/tickets/" + ticketId + "/cancel")
+                        .header("Authorization", "Bearer " + participantJwtToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(ticketId)))
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
@@ -391,15 +392,28 @@ class EventControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/tickets should return list of purchased tickets, optionally filtered by email")
+    @DisplayName("GET /api/tickets should return 401 when unauthenticated, or tickets for ORGANIZER/PARTICIPANT")
     void shouldReturnTicketsAndFilterByEmail() throws Exception {
+        // 1. Without auth -> 401 Unauthorized
         mockMvc.perform(get("/api/tickets"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status", is(401)));
+
+        // 2. Authenticated as ORGANIZER -> returns all tickets, can filter by email
+        mockMvc.perform(get("/api/tickets")
+                        .header("Authorization", "Bearer " + organizerJwtToken))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        mockMvc.perform(get("/api/tickets?email=unknown@example.com"))
+        mockMvc.perform(get("/api/tickets?email=unknown@example.com")
+                        .header("Authorization", "Bearer " + organizerJwtToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+
+        // 3. Authenticated as PARTICIPANT -> 200 with participant tickets
+        mockMvc.perform(get("/api/tickets")
+                        .header("Authorization", "Bearer " + participantJwtToken))
+                .andExpect(status().isOk());
     }
 
     @Test

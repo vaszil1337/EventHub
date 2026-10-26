@@ -18,6 +18,7 @@ interface EventsPageProps {
   onCategoryChange: (val: string) => void;
   categories: string[];
   onBookTicket: (event: Event) => void;
+  onEditEvent?: (event: Event) => void;
 }
 
 export const EventsPage: React.FC<EventsPageProps> = ({
@@ -31,6 +32,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   onCategoryChange,
   categories,
   onBookTicket,
+  onEditEvent,
 }) => {
   return (
     <Box sx={{ pb: 8 }}>
@@ -106,6 +108,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
           onCategoryChange={onCategoryChange}
           categories={categories}
           onBookTicket={onBookTicket}
+          onEditEvent={onEditEvent}
         />
       </Container>
     </Box>

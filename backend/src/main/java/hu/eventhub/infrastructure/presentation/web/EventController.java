@@ -30,6 +30,7 @@ public class EventController {
     private final ResetEventsUseCase resetEventsUseCase;
     private final CreateEventUseCase createEventUseCase;
     private final AddTicketTypeUseCase addTicketTypeUseCase;
+    private final UpdateEventUseCase updateEventUseCase;
     private final TokenProviderPort tokenProvider;
 
     @Autowired
@@ -39,6 +40,7 @@ public class EventController {
             ResetEventsUseCase resetEventsUseCase,
             CreateEventUseCase createEventUseCase,
             AddTicketTypeUseCase addTicketTypeUseCase,
+            UpdateEventUseCase updateEventUseCase,
             TokenProviderPort tokenProvider
     ) {
         this.getEventsUseCase = Objects.requireNonNull(getEventsUseCase, "getEventsUseCase cannot be null");
@@ -46,7 +48,19 @@ public class EventController {
         this.resetEventsUseCase = Objects.requireNonNull(resetEventsUseCase, "resetEventsUseCase cannot be null");
         this.createEventUseCase = createEventUseCase;
         this.addTicketTypeUseCase = addTicketTypeUseCase;
+        this.updateEventUseCase = updateEventUseCase;
         this.tokenProvider = tokenProvider;
+    }
+
+    public EventController(
+            GetEventsUseCase getEventsUseCase,
+            GetEventByIdUseCase getEventByIdUseCase,
+            ResetEventsUseCase resetEventsUseCase,
+            CreateEventUseCase createEventUseCase,
+            AddTicketTypeUseCase addTicketTypeUseCase,
+            TokenProviderPort tokenProvider
+    ) {
+        this(getEventsUseCase, getEventByIdUseCase, resetEventsUseCase, createEventUseCase, addTicketTypeUseCase, null, tokenProvider);
     }
 
     public EventController(
@@ -131,6 +145,36 @@ public class EventController {
         );
         Event updated = addTicketTypeUseCase.addTicketType(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(EventResponseMapper.toResponse(updated));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EventResponse> updateEvent(
+            @PathVariable("id") String id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestBody UpdateEventRequest request
+    ) {
+        requireOrganizerRole(authorizationHeader, "Only authenticated ORGANIZER users are authorized to update events.");
+        if (updateEventUseCase == null) {
+            throw new IllegalStateException("UpdateEventUseCase is not configured");
+        }
+        Instant parsedDate = request.date() != null && !request.date().isBlank()
+                ? Instant.parse(request.date())
+                : null;
+        UpdateEventCommand command = new UpdateEventCommand(
+                id,
+                request.title(),
+                request.description(),
+                parsedDate,
+                request.venueName(),
+                request.venueAddress(),
+                request.venueCapacity(),
+                request.basePriceAmount(),
+                request.currency(),
+                request.category(),
+                request.imageUrl()
+        );
+        Event updated = updateEventUseCase.updateEvent(command);
+        return ResponseEntity.ok(EventResponseMapper.toResponse(updated));
     }
 
     @PostMapping("/reset")

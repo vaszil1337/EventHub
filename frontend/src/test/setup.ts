@@ -4,6 +4,39 @@ import { INITIAL_EVENTS } from '@/shared/utils/seedData';
 import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 
+// Mock localStorage for headless test environment
+if (!globalThis.localStorage || typeof globalThis.localStorage.getItem !== 'function') {
+  const store = new Map<string, string>();
+  const mockStorage = {
+    getItem: (key: string) => (store.has(key) ? store.get(key)! : null),
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (index: number) => Array.from(store.keys())[index] || null,
+    get length() {
+      return store.size;
+    },
+  };
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: mockStorage,
+    writable: true,
+    configurable: true,
+  });
+  if (typeof window !== 'undefined') {
+    Object.defineProperty(window, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true,
+    });
+  }
+}
+
 // In-memory mock backend state for Vitest testing
 let mockEvents: Event[] = [];
 let mockTickets: Ticket[] = [];
@@ -33,7 +66,7 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
         token: isOrganizer ? 'jwt-organizer-token' : 'jwt-participant-token',
         user: {
           id: isOrganizer ? 'usr-org-1' : 'usr-part-1',
-          fullName: isOrganizer ? 'Anna Kovács (Organizer)' : 'Péter Nagy (Participant)',
+          fullName: isOrganizer ? 'Anna Kovács' : 'Péter Nagy',
           email: body.email,
           role: isOrganizer ? 'ORGANIZER' : 'PARTICIPANT',
         },
@@ -56,6 +89,26 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
         },
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // GET /api/auth/me
+  if (url === '/api/auth/me' && method === 'GET') {
+    const authHeader = (init?.headers as Record<string, string>)?.[
+      'Authorization'
+    ] || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ status: 401, message: 'Unauthorized' }), { status: 401 });
+    }
+    const isOrganizer = authHeader.includes('organizer');
+    return new Response(
+      JSON.stringify({
+        id: isOrganizer ? 'usr-org-1' : 'usr-part-1',
+        fullName: isOrganizer ? 'Anna Kovács' : 'Péter Nagy',
+        email: isOrganizer ? 'organizer@eventhub.hu' : 'participant@eventhub.hu',
+        role: isOrganizer ? 'ORGANIZER' : 'PARTICIPANT',
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
@@ -115,6 +168,40 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
       );
     }
     return new Response(JSON.stringify(event), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // PUT /api/events/:id
+  if (eventMatch && method === 'PUT') {
+    const id = eventMatch[1];
+    const index = mockEvents.findIndex((e) => e.id === id);
+    if (index === -1) {
+      return new Response(JSON.stringify({ status: 404, message: 'Event not found' }), { status: 404 });
+    }
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    const existing = mockEvents[index];
+    const updated: Event = {
+      ...existing,
+      title: body.title !== undefined ? body.title : existing.title,
+      description: body.description !== undefined ? body.description : existing.description,
+      date: body.date !== undefined ? body.date : existing.date,
+      venue: {
+        ...existing.venue,
+        name: body.venueName !== undefined ? body.venueName : existing.venue.name,
+        address: body.venueAddress !== undefined ? body.venueAddress : existing.venue.address,
+        capacity: body.venueCapacity !== undefined ? body.venueCapacity : existing.venue.capacity,
+      },
+      price: {
+        amount: body.basePriceAmount !== undefined ? body.basePriceAmount : existing.price.amount,
+        currency: body.currency !== undefined ? body.currency : existing.price.currency,
+      },
+      category: body.category !== undefined ? body.category : existing.category,
+      imageUrl: body.imageUrl !== undefined ? body.imageUrl : existing.imageUrl,
+    };
+    mockEvents[index] = updated;
+    return new Response(JSON.stringify(updated), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -195,7 +282,13 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
 
   // GET /api/tickets (with optional ?email=...)
   if (url.startsWith('/api/tickets') && !url.startsWith('/api/tickets/event/') && method === 'GET') {
-    return new Response(JSON.stringify(mockTickets), {
+    const parsedUrl = new URL(url, 'http://localhost');
+    const emailParam = parsedUrl.searchParams.get('email');
+    let filtered = mockTickets;
+    if (emailParam) {
+      filtered = filtered.filter((t) => t.participantEmail.toLowerCase() === emailParam.toLowerCase());
+    }
+    return new Response(JSON.stringify(filtered), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

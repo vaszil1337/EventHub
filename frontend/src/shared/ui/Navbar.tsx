@@ -14,6 +14,7 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
@@ -133,7 +134,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Button
               component={RouterNavLink}
               to="/tickets"
-              startIcon={<ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />}
+              startIcon={
+                user?.role === 'ORGANIZER' ? (
+                  <AssignmentOutlinedIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />
+                )
+              }
               sx={{
                 fontWeight: 500,
                 fontSize: '0.875rem',
@@ -152,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 },
               }}
             >
-              My Tickets
+              {user?.role === 'ORGANIZER' ? 'Reservations' : 'My Tickets'}
               {totalTicketsCount > 0 && (
                 <Chip
                   label={totalTicketsCount}
@@ -215,10 +222,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
                 <Box sx={{ lineHeight: 1.1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', display: 'block' }}>
-                    {user.fullName}
+                    {user.fullName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim()}
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600 }}>
-                    {user.role} • JWT Verified
+                    {user.role}
                   </Typography>
                 </Box>
                 {onLogout && (

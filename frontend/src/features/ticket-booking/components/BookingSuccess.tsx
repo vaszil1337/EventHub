@@ -140,7 +140,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
               Attendee
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {ticket.participantName}
+              {ticket.participantName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim()}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {ticket.participantEmail}

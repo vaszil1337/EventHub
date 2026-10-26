@@ -43,11 +43,11 @@ public class TicketJpaEntity {
     @Column(name = "purchase_date", nullable = false)
     private Instant purchaseDate;
 
-    @Column(name = "status", nullable = false, length = 30)
-    private String status;
+    @Column(name = "status", length = 30)
+    private String status = "VALID";
 
-    @Column(name = "email_status", nullable = false, length = 50)
-    private String emailStatus;
+    @Column(name = "email_status", length = 50)
+    private String emailStatus = "SENT";
 
     public TicketJpaEntity() {}
 

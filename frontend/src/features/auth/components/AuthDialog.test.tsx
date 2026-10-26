@@ -13,7 +13,7 @@ describe('AuthDialog Integration Tests', () => {
     );
 
     expect(screen.getByTestId('auth-dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Spring Security • Server-Signed JWT/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Welcome back/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Organizer Demo/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Participant Demo/i })).toBeInTheDocument();
   });
@@ -32,7 +32,7 @@ describe('AuthDialog Integration Tests', () => {
     const demoOrganizerBtn = screen.getByRole('button', { name: /Organizer Demo/i });
     await user.click(demoOrganizerBtn);
 
-    const loginSubmitBtn = screen.getByRole('button', { name: /Sign In with JWT/i });
+    const loginSubmitBtn = screen.getByRole('button', { name: /^Sign In$/i });
     await user.click(loginSubmitBtn);
 
     await waitFor(() => {

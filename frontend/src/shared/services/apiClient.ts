@@ -1,12 +1,42 @@
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+const TOKEN_STORAGE_KEY = 'eventhub_auth_token';
 
-let currentAuthToken: string | null = null;
+function getStoredToken(): string | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function persistToken(token: string | null): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (token) {
+        window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } else {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+let currentAuthToken: string | null = getStoredToken();
 
 export function setAuthToken(token: string | null): void {
   currentAuthToken = token;
+  persistToken(token);
 }
 
 export function getAuthToken(): string | null {
+  if (!currentAuthToken) {
+    currentAuthToken = getStoredToken();
+  }
   return currentAuthToken;
 }
 
