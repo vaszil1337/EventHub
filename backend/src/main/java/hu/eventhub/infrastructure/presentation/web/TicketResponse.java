@@ -7,5 +7,9 @@ public record TicketResponse(
         String participantEmail,
         String ticketCode,
         PriceResponse price,
-        String purchaseDate
+        String purchaseDate,
+        String ticketTypeId,
+        String ticketTypeName,
+        String status,
+        String emailStatus
 ) {}

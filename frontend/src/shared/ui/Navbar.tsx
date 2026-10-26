@@ -11,13 +11,25 @@ import {
 } from '@mui/material';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
+import { UserRole } from '@/features/events/types';
 
 interface NavbarProps {
   totalTicketsCount?: number;
+  userRole?: UserRole;
+  onRoleChange?: (role: UserRole) => void;
+  onOpenOrganizerDialog?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  totalTicketsCount = 0,
+  userRole = 'PARTICIPANT',
+  onRoleChange,
+  onOpenOrganizerDialog,
+}) => {
   return (
     <AppBar
       position="sticky"
@@ -31,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
       }}
     >
       <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ justifyContent: 'space-between', minHeight: 64, py: 0.5 }}>
+        <Toolbar disableGutters sx={{ justifyContent: 'space-between', minHeight: 64, py: 0.5, gap: 1, flexWrap: 'wrap' }}>
           {/* Logo & Brand */}
           <Box
             component={RouterLink}
@@ -86,8 +98,8 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
             </Box>
           </Box>
 
-          {/* Navigation Links */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          {/* Navigation Links & Role Switcher */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Button
               component={RouterNavLink}
               to="/"
@@ -97,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
                 fontWeight: 500,
                 fontSize: '0.875rem',
                 color: 'text.secondary',
-                px: 1.75,
+                px: 1.5,
                 py: 0.75,
                 borderRadius: '6px',
                 '&.active': {
@@ -122,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
                 fontWeight: 500,
                 fontSize: '0.875rem',
                 color: 'text.secondary',
-                px: 1.75,
+                px: 1.5,
                 py: 0.75,
                 borderRadius: '6px',
                 '&.active': {
@@ -153,6 +165,80 @@ export const Navbar: React.FC<NavbarProps> = ({ totalTicketsCount = 0 }) => {
                 />
               )}
             </Button>
+
+            {/* Organizer Action Button */}
+            {userRole === 'ORGANIZER' && onOpenOrganizerDialog && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddCircleOutlineIcon sx={{ fontSize: 16 }} />}
+                onClick={onOpenOrganizerDialog}
+                data-testid="organizer-manage-button"
+                sx={{
+                  borderRadius: '6px',
+                  px: 1.5,
+                  py: 0.6,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                }}
+              >
+                Manage Events
+              </Button>
+            )}
+
+            {/* Role Switcher Pill */}
+            {onRoleChange && (
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  p: 0.35,
+                  borderRadius: '8px',
+                  bgcolor: 'action.hover',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  ml: 0.5,
+                }}
+                data-testid="role-switcher"
+              >
+                <Button
+                  size="small"
+                  startIcon={<PersonOutlineIcon sx={{ fontSize: 15 }} />}
+                  onClick={() => onRoleChange('PARTICIPANT')}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 1.25,
+                    py: 0.35,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    bgcolor: userRole === 'PARTICIPANT' ? 'background.paper' : 'transparent',
+                    color: userRole === 'PARTICIPANT' ? 'text.primary' : 'text.secondary',
+                    boxShadow: userRole === 'PARTICIPANT' ? 1 : 0,
+                  }}
+                >
+                  Participant
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<AdminPanelSettingsOutlinedIcon sx={{ fontSize: 15 }} />}
+                  onClick={() => onRoleChange('ORGANIZER')}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 1.25,
+                    py: 0.35,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    bgcolor: userRole === 'ORGANIZER' ? 'background.paper' : 'transparent',
+                    color: userRole === 'ORGANIZER' ? 'text.primary' : 'text.secondary',
+                    boxShadow: userRole === 'ORGANIZER' ? 1 : 0,
+                  }}
+                >
+                  Organizer
+                </Button>
+              </Box>
+            )}
           </Box>
         </Toolbar>
       </Container>

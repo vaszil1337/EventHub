@@ -34,6 +34,8 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
     setParticipantName,
     participantEmail,
     setParticipantEmail,
+    selectedTicketTypeId,
+    setSelectedTicketTypeId,
     loading,
     error,
     bookedTicket,
@@ -136,6 +138,8 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
             onNameChange={setParticipantName}
             participantEmail={participantEmail}
             onEmailChange={setParticipantEmail}
+            selectedTicketTypeId={selectedTicketTypeId}
+            onTicketTypeChange={setSelectedTicketTypeId}
             loading={loading}
             error={error}
             onSubmit={handleSubmit}

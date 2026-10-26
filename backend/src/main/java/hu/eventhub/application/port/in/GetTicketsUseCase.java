@@ -8,4 +8,5 @@ import java.util.List;
 public interface GetTicketsUseCase {
     List<Ticket> getAllTickets();
     List<Ticket> getTicketsByEventId(EventId eventId);
+    List<Ticket> getTicketsByParticipantEmail(String email);
 }

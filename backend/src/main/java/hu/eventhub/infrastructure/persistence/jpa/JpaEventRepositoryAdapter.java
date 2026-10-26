@@ -16,38 +16,51 @@ import java.util.Optional;
 public class JpaEventRepositoryAdapter implements EventRepository {
 
     private final EventSpringDataRepository springDataRepository;
+    private final TicketTypeSpringDataRepository ticketTypeRepository;
 
-    public JpaEventRepositoryAdapter(EventSpringDataRepository springDataRepository) {
+    public JpaEventRepositoryAdapter(
+            EventSpringDataRepository springDataRepository,
+            TicketTypeSpringDataRepository ticketTypeRepository
+    ) {
         this.springDataRepository = Objects.requireNonNull(springDataRepository, "springDataRepository cannot be null");
+        this.ticketTypeRepository = Objects.requireNonNull(ticketTypeRepository, "ticketTypeRepository cannot be null");
     }
 
     @Override
     public List<Event> findAll() {
         return springDataRepository.findAll().stream()
-                .map(EventPersistenceMapper::toDomain)
+                .map(entity -> {
+                    List<TicketTypeJpaEntity> tiers = ticketTypeRepository.findByEventId(entity.getId());
+                    return EventPersistenceMapper.toDomain(entity, tiers);
+                })
                 .toList();
     }
 
     @Override
     public Optional<Event> findById(EventId id) {
         return springDataRepository.findById(id.value())
-                .map(EventPersistenceMapper::toDomain);
+                .map(entity -> {
+                    List<TicketTypeJpaEntity> tiers = ticketTypeRepository.findByEventId(entity.getId());
+                    return EventPersistenceMapper.toDomain(entity, tiers);
+                });
     }
 
     @Override
     public Event save(Event event) {
         EventJpaEntity entity = EventPersistenceMapper.toJpaEntity(event);
         EventJpaEntity saved = springDataRepository.save(entity);
-        return EventPersistenceMapper.toDomain(saved);
+        List<TicketTypeJpaEntity> tiers = EventPersistenceMapper.toTicketTypeJpaEntities(event);
+        List<TicketTypeJpaEntity> savedTiers = ticketTypeRepository.saveAll(tiers);
+        return EventPersistenceMapper.toDomain(saved, savedTiers);
     }
 
     @Override
     public void resetToSampleData() {
+        ticketTypeRepository.deleteAll();
         springDataRepository.deleteAll();
         List<Event> seedEvents = SampleEventData.initialEvents();
-        List<EventJpaEntity> entities = seedEvents.stream()
-                .map(EventPersistenceMapper::toJpaEntity)
-                .toList();
-        springDataRepository.saveAll(entities);
+        for (Event seedEvent : seedEvents) {
+            save(seedEvent);
+        }
     }
 }

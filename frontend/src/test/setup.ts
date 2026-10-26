@@ -32,6 +32,31 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
     });
   }
 
+  // POST /api/events
+  if (url === '/api/events' && method === 'POST') {
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    const newEvent: Event = {
+      id: `evt-${Date.now()}`,
+      title: body.title,
+      description: body.description,
+      date: body.date || new Date().toISOString(),
+      venue: {
+        id: `ven-${Date.now()}`,
+        name: body.venueName,
+        address: body.venueAddress,
+        capacity: body.venueCapacity,
+      },
+      soldTicketsCount: 0,
+      price: { amount: body.basePriceAmount, currency: body.currency || 'USD' },
+      category: body.category || 'General',
+    };
+    mockEvents.push(newEvent);
+    return new Response(JSON.stringify(newEvent), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   // POST /api/events/reset
   if (url === '/api/events/reset' && method === 'POST') {
     resetMockBackend();
@@ -63,7 +88,7 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
   // POST /api/tickets/book
   if (url === '/api/tickets/book' && method === 'POST') {
     const body = init?.body ? JSON.parse(init.body as string) : {};
-    const { eventId, participantName, participantEmail } = body;
+    const { eventId, participantName, participantEmail, ticketTypeId } = body;
 
     const event = mockEvents.find((e) => e.id === eventId);
     if (!event) {
@@ -92,6 +117,7 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
 
     event.soldTicketsCount += 1;
     ticketCounter += 1;
+    const isFailEmail = String(participantEmail || '').endsWith('@fail-email.test');
     const ticket: Ticket = {
       id: `tkt-${ticketCounter}`,
       ticketCode: `EVT-${ticketCounter}-A1B2`,
@@ -100,6 +126,10 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
       participantEmail,
       price: event.price,
       purchaseDate: new Date().toISOString(),
+      ticketTypeId: ticketTypeId || `${event.id}-standard`,
+      ticketTypeName: 'Standard',
+      status: 'VALID',
+      emailStatus: isFailEmail ? 'FAILED_PENDING_RETRY' : 'SENT',
     };
     mockTickets.push(ticket);
 
@@ -109,8 +139,27 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
     });
   }
 
-  // GET /api/tickets
-  if (url === '/api/tickets' && method === 'GET') {
+  // POST /api/tickets/:id/cancel
+  const cancelMatch = url.match(/^\/api\/tickets\/([^/?]+)\/cancel$/);
+  if (cancelMatch && method === 'POST') {
+    const ticketId = cancelMatch[1];
+    const ticket = mockTickets.find((t) => t.id === ticketId);
+    if (!ticket) {
+      return new Response(JSON.stringify({ status: 404, message: 'Ticket not found' }), { status: 404 });
+    }
+    ticket.status = 'CANCELLED';
+    const event = mockEvents.find((e) => e.id === ticket.eventId);
+    if (event && event.soldTicketsCount > 0) {
+      event.soldTicketsCount -= 1;
+    }
+    return new Response(JSON.stringify(ticket), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // GET /api/tickets (with optional ?email=...)
+  if (url.startsWith('/api/tickets') && !url.startsWith('/api/tickets/event/') && method === 'GET') {
     return new Response(JSON.stringify(mockTickets), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

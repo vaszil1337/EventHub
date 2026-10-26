@@ -15,19 +15,12 @@ function isValidEmail(email: string): boolean {
 }
 
 /**
- * TicketService handles ticket issuance, capacity enforcement, and persistence.
+ * TicketService handles ticket issuance, cancellation, capacity enforcement, and persistence.
  * Communicates directly with the PostgreSQL-backed Spring Boot REST API (/api/tickets).
  */
 export const ticketService = {
   /**
    * Books a ticket for the requested event via the backend REST API.
-   *
-   * BUSINESS RULES:
-   * 1. Validates participant name and email format on client.
-   * 2. Checks if event ID is provided.
-   * 3. Sends booking command to backend (POST /api/tickets/book).
-   * 4. Converts 409 Conflict to CapacityExceededError.
-   * 5. Converts 400 Bad Request to BookingValidationError.
    */
   async bookTicket(request: BookingRequest): Promise<Ticket> {
     const trimmedName = request.participantName?.trim();
@@ -46,13 +39,17 @@ export const ticketService = {
     }
 
     try {
+      const payload: Record<string, string> = {
+        eventId: request.eventId,
+        participantName: trimmedName,
+        participantEmail: trimmedEmail,
+      };
+      if (request.ticketTypeId) {
+        payload.ticketTypeId = request.ticketTypeId;
+      }
       return await apiFetch<Ticket>('/tickets/book', {
         method: 'POST',
-        body: JSON.stringify({
-          eventId: request.eventId,
-          participantName: trimmedName,
-          participantEmail: trimmedEmail,
-        }),
+        body: JSON.stringify(payload),
       });
     } catch (err: any) {
       if (err?.status === 409) {
@@ -68,9 +65,22 @@ export const ticketService = {
   },
 
   /**
-   * Retrieves all purchased tickets from the backend.
+   * Cancels a booked ticket and releases its seat capacity on the backend.
    */
-  async getTickets(): Promise<Ticket[]> {
+  async cancelTicket(ticketId: string): Promise<Ticket> {
+    return apiFetch<Ticket>(`/tickets/${ticketId}/cancel`, {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Retrieves purchased tickets from the backend (optionally filtered by participant email).
+   */
+  async getTickets(participantEmail?: string): Promise<Ticket[]> {
+    if (participantEmail && participantEmail.trim()) {
+      const encoded = encodeURIComponent(participantEmail.trim());
+      return apiFetch<Ticket[]>(`/tickets?email=${encoded}`);
+    }
     return apiFetch<Ticket[]>('/tickets');
   },
 

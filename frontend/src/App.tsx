@@ -5,7 +5,8 @@ import { Navbar } from '@/shared/ui/Navbar';
 import { NotificationSnackbar, NotificationState } from '@/shared/ui/NotificationSnackbar';
 import { useEvents } from '@/features/events/hooks/useEvents';
 import { BookingDialog } from '@/features/ticket-booking/components/BookingDialog';
-import { Event } from '@/features/events/types';
+import { OrganizerEventDialog } from '@/features/events/components/OrganizerEventDialog';
+import { Event, UserRole } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { ticketService } from '@/features/ticket-booking/services/ticketService';
 import { EventsPage } from '@/pages/EventsPage';
@@ -26,6 +27,8 @@ export function App() {
     refreshEvents,
   } = useEvents();
 
+  const [userRole, setUserRole] = useState<UserRole>('PARTICIPANT');
+  const [isOrganizerDialogOpen, setIsOrganizerDialogOpen] = useState<boolean>(false);
   const [selectedEventForBooking, setSelectedEventForBooking] = useState<Event | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
   const [totalTickets, setTotalTickets] = useState<number>(0);
@@ -40,9 +43,9 @@ export function App() {
   const updateTicketCount = useCallback(async () => {
     try {
       const tickets = await ticketService.getTickets();
-      setTotalTickets(tickets.length);
+      const validTickets = tickets.filter((t) => t.status !== 'CANCELLED');
+      setTotalTickets(validTickets.length);
     } catch {
-      // Fallback
       setTotalTickets(0);
     }
   }, []);
@@ -63,10 +66,29 @@ export function App() {
   const handleBookingSuccess = async (ticket: Ticket) => {
     await refreshEvents();
     await updateTicketCount();
-    setBookingRefreshKey((prev) => prev + 1); // Trigger TicketsPage refresh
+    setBookingRefreshKey((prev) => prev + 1);
     setNotification({
       open: true,
       message: `Success! Ticket ${ticket.ticketCode} reserved for ${ticket.participantName}.`,
+      severity: 'success',
+    });
+  };
+
+  const handleTicketCancelled = async (ticket: Ticket) => {
+    await refreshEvents();
+    await updateTicketCount();
+    setNotification({
+      open: true,
+      message: `Reservation ${ticket.ticketCode} cancelled. Seat capacity has been released.`,
+      severity: 'info',
+    });
+  };
+
+  const handleOrganizerSuccess = async (_event: Event, actionLabel: string) => {
+    await refreshEvents();
+    setNotification({
+      open: true,
+      message: actionLabel,
       severity: 'success',
     });
   };
@@ -78,7 +100,12 @@ export function App() {
   return (
     <BrowserRouter>
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-        <Navbar totalTicketsCount={totalTickets} />
+        <Navbar
+          totalTicketsCount={totalTickets}
+          userRole={userRole}
+          onRoleChange={setUserRole}
+          onOpenOrganizerDialog={() => setIsOrganizerDialogOpen(true)}
+        />
 
         {/* Main Routes Content */}
         <Box sx={{ flexGrow: 1 }}>
@@ -109,7 +136,16 @@ export function App() {
             />
 
             {/* Tickets Page */}
-            <Route path="/tickets" element={<TicketsPage key={bookingRefreshKey} />} />
+            <Route
+              path="/tickets"
+              element={
+                <TicketsPage
+                  key={bookingRefreshKey}
+                  userRole={userRole}
+                  onTicketCancelled={handleTicketCancelled}
+                />
+              }
+            />
           </Routes>
         </Box>
 
@@ -119,6 +155,15 @@ export function App() {
           event={selectedEventForBooking}
           onClose={handleCloseBooking}
           onBookingSuccess={handleBookingSuccess}
+        />
+
+        {/* Organizer Management Modal */}
+        <OrganizerEventDialog
+          open={isOrganizerDialogOpen}
+          onClose={() => setIsOrganizerDialogOpen(false)}
+          events={allEvents}
+          userRole={userRole}
+          onEventCreatedOrUpdated={handleOrganizerSuccess}
         />
 
         {/* Global Notification Feedback */}

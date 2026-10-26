@@ -1,5 +1,8 @@
 import { Money } from '@/shared/types/money';
 
+export type TicketStatus = 'VALID' | 'CANCELLED';
+export type EmailDeliveryStatus = 'SENT' | 'FAILED_PENDING_RETRY';
+
 export interface Ticket {
   id: string;
   eventId: string;
@@ -8,12 +11,17 @@ export interface Ticket {
   ticketCode: string;
   price: Money;
   purchaseDate: string;
+  ticketTypeId?: string;
+  ticketTypeName?: string;
+  status?: TicketStatus;
+  emailStatus?: EmailDeliveryStatus;
 }
 
 export interface BookingRequest {
   eventId: string;
   participantName: string;
   participantEmail: string;
+  ticketTypeId?: string;
 }
 
 /**

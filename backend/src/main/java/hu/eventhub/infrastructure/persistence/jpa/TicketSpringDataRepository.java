@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface TicketSpringDataRepository extends JpaRepository<TicketJpaEntity, String> {
     List<TicketJpaEntity> findByEventId(String eventId);
+    List<TicketJpaEntity> findByParticipantEmailIgnoreCase(String participantEmail);
 }

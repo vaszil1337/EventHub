@@ -1,4 +1,4 @@
-import { Event } from '@/features/events/types';
+import { Event, CreateEventInput, AddTicketTypeInput, UserRole } from '@/features/events/types';
 import { apiFetch } from '@/shared/services/apiClient';
 
 /**
@@ -25,6 +25,32 @@ export const eventService = {
       }
       throw err;
     }
+  },
+
+  /**
+   * Creates a new event (requires ORGANIZER role).
+   */
+  async createEvent(input: CreateEventInput, role: UserRole = 'ORGANIZER'): Promise<Event> {
+    return apiFetch<Event>('/events', {
+      method: 'POST',
+      headers: {
+        'X-User-Role': role,
+      },
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Adds a new ticket type tier to an existing event (requires ORGANIZER role).
+   */
+  async addTicketType(eventId: string, input: AddTicketTypeInput, role: UserRole = 'ORGANIZER'): Promise<Event> {
+    return apiFetch<Event>(`/events/${eventId}/ticket-types`, {
+      method: 'POST',
+      headers: {
+        'X-User-Role': role,
+      },
+      body: JSON.stringify(input),
+    });
   },
 
   /**

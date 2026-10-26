@@ -1,5 +1,7 @@
 package hu.eventhub.infrastructure.presentation.web;
 
+import java.util.List;
+
 public record EventResponse(
         String id,
         String title,
@@ -9,5 +11,6 @@ public record EventResponse(
         int soldTicketsCount,
         PriceResponse price,
         String category,
-        String imageUrl
+        String imageUrl,
+        List<TicketTypeResponse> ticketTypes
 ) {}

@@ -2,12 +2,14 @@ package hu.eventhub.infrastructure.persistence.jpa;
 
 import hu.eventhub.domain.model.EventId;
 import hu.eventhub.domain.model.Ticket;
+import hu.eventhub.domain.model.TicketId;
 import hu.eventhub.domain.model.TicketRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @Primary
@@ -27,6 +29,12 @@ public class JpaTicketRepositoryAdapter implements TicketRepository {
     }
 
     @Override
+    public Optional<Ticket> findById(TicketId id) {
+        return springDataRepository.findById(id.value())
+                .map(TicketPersistenceMapper::toDomain);
+    }
+
+    @Override
     public List<Ticket> findAll() {
         return springDataRepository.findAll().stream()
                 .map(TicketPersistenceMapper::toDomain)
@@ -36,6 +44,13 @@ public class JpaTicketRepositoryAdapter implements TicketRepository {
     @Override
     public List<Ticket> findByEventId(EventId eventId) {
         return springDataRepository.findByEventId(eventId.value()).stream()
+                .map(TicketPersistenceMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Ticket> findByParticipantEmail(String email) {
+        return springDataRepository.findByParticipantEmailIgnoreCase(email).stream()
                 .map(TicketPersistenceMapper::toDomain)
                 .toList();
     }

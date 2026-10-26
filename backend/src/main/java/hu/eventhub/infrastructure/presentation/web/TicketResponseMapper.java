@@ -16,7 +16,11 @@ public final class TicketResponseMapper {
                 snapshot.participantEmail(),
                 snapshot.ticketCode().value(),
                 new PriceResponse(snapshot.price().amount(), snapshot.price().currency()),
-                snapshot.purchaseDate().toString()
+                snapshot.purchaseDate().toString(),
+                snapshot.ticketTypeId(),
+                snapshot.ticketTypeName(),
+                snapshot.status().name(),
+                snapshot.emailStatus().name()
         );
     }
 }

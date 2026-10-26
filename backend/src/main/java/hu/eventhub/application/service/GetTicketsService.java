@@ -24,4 +24,12 @@ public class GetTicketsService implements GetTicketsUseCase {
     public List<Ticket> getTicketsByEventId(EventId eventId) {
         return ticketRepository.findByEventId(eventId);
     }
+
+    @Override
+    public List<Ticket> getTicketsByParticipantEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return getAllTickets();
+        }
+        return ticketRepository.findByParticipantEmail(email.trim());
+    }
 }

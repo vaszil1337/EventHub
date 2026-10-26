@@ -151,9 +151,12 @@ mvn spring-boot:run
 
 | Metódus | Útvonal | Leírás | Siker Kód | Hiba Kód |
 |---|---|---|---|---|
-| `GET` | `/api/events` | Összes esemény listázása | `200 OK` | - |
+| `GET` | `/api/events` | Összes esemény listázása (jegytípusokkal és dinamikus árakkal) | `200 OK` | - |
 | `GET` | `/api/events/{id}` | Egyedi esemény lekérése | `200 OK` | `404 Not Found` |
+| `POST` | `/api/events` | Új esemény létrehozása (`X-User-Role: ORGANIZER` kötelező) | `201 Created` | `403 Forbidden`, `400 Bad Request` |
+| `POST` | `/api/events/{id}/ticket-types` | Új jegytípus hozzáadása eseményhez (`X-User-Role: ORGANIZER`) | `201 Created` | `403 Forbidden`, `404 Not Found` |
 | `POST` | `/api/events/reset` | Események és jegyek alaphelyzetbe állítása | `200 OK` | - |
-| `POST` | `/api/tickets/book` | Jegy foglalása (kapacitásellenőrzéssel) | `201 Created` | `409 Conflict` (teltház), `400 Bad Request` |
-| `GET` | `/api/tickets` | Megvásárolt jegyek listája | `200 OK` | - |
+| `POST` | `/api/tickets/book` | Jegy foglalása (jegytípus, dinamikus ár & e-mail értesítés) | `201 Created` | `409 Conflict` (teltház), `400 Bad Request` |
+| `POST` | `/api/tickets/{ticketId}/cancel` | Jegyrendelés lemondása és kapacitás felszabadítása | `200 OK` | `404 Not Found`, `400 Bad Request` |
+| `GET` | `/api/tickets` | Megvásárolt jegyek listája (opcionális `?email=` szűréssel) | `200 OK` | - |
 | `GET` | `/api/tickets/event/{eventId}` | Adott eseményhez tartozó jegyek | `200 OK` | - |

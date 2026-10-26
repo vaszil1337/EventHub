@@ -12,6 +12,7 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [participantName, setParticipantName] = useState<string>('');
   const [participantEmail, setParticipantEmail] = useState<string>('');
+  const [selectedTicketTypeId, setSelectedTicketTypeId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [bookedTicket, setBookedTicket] = useState<Ticket | null>(null);
@@ -20,6 +21,8 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
     setSelectedEvent(event);
     setParticipantName('');
     setParticipantEmail('');
+    const firstAvailableTier = event.ticketTypes?.find((tt) => tt.soldCount < tt.quota) || event.ticketTypes?.[0];
+    setSelectedTicketTypeId(firstAvailableTier ? firstAvailableTier.id : '');
     setError(null);
     setBookedTicket(null);
     setIsOpen(true);
@@ -43,6 +46,7 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
         eventId: selectedEvent.id,
         participantName,
         participantEmail,
+        ticketTypeId: selectedTicketTypeId || undefined,
       });
 
       setBookedTicket(ticket);
@@ -57,7 +61,7 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [selectedEvent, participantName, participantEmail, onSuccess]);
+  }, [selectedEvent, participantName, participantEmail, selectedTicketTypeId, onSuccess]);
 
   return {
     isOpen,
@@ -66,6 +70,8 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
     setParticipantName,
     participantEmail,
     setParticipantEmail,
+    selectedTicketTypeId,
+    setSelectedTicketTypeId,
     loading,
     error,
     bookedTicket,

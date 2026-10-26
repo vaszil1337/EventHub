@@ -40,7 +40,8 @@ EventHub/
 │   ├── architecture.md            # Ez a fő rendszerterv
 │   ├── week-01.md                 # 1. heti sprint összefoglaló (Frontend MVP)
 │   ├── week-02.md                 # 2. heti sprint (Hexagonal Architecture & Domain DDD)
-│   └── week-03.md                 # 3. heti sprint (JPA, Migrációk & REST Integráció)
+│   ├── week-03.md                 # 3. heti sprint (PostgreSQL JPA & REST Integráció)
+│   └── week-04.md                 # 4. heti sprint (Jegytípusok, Árazás, Lemondás, Szerepkörök & Email Port)
 │
 ├── backend/                       # Spring Boot Hexagonális Backend (Java 21)
 │   ├── pom.xml                    # Maven projekt konfiguráció

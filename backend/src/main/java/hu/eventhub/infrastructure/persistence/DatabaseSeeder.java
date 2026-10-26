@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Seeds initial event catalog into the PostgreSQL database upon application startup
- * if no events are present.
+ * if no events are present, and ensures all events have their ticket type tiers persisted.
  */
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
@@ -31,7 +31,10 @@ public class DatabaseSeeder implements CommandLineRunner {
             eventRepository.resetToSampleData();
             log.info("DatabaseSeeder successfully inserted {} initial events into PostgreSQL.", eventRepository.findAll().size());
         } else {
-            log.info("Database already contains {} events. DatabaseSeeder skipping initial seed.", existing.size());
+            for (Event event : existing) {
+                eventRepository.save(event);
+            }
+            log.info("Database already contains {} events (verified ticket type tiers).", existing.size());
         }
     }
 }

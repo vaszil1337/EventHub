@@ -2,6 +2,8 @@ package hu.eventhub.infrastructure.persistence.jpa;
 
 import hu.eventhub.domain.model.*;
 
+import java.util.List;
+
 public final class EventPersistenceMapper {
 
     private EventPersistenceMapper() {}
@@ -25,7 +27,49 @@ public final class EventPersistenceMapper {
         );
     }
 
+    public static List<TicketTypeJpaEntity> toTicketTypeJpaEntities(Event domain) {
+        EventSnapshot snapshot = domain.toSnapshot();
+        String eventId = snapshot.id().value();
+        return snapshot.ticketTypes().stream()
+                .map(t -> new TicketTypeJpaEntity(
+                        t.getId().value(),
+                        eventId,
+                        t.getName(),
+                        t.getDescription(),
+                        t.getBasePrice().amount(),
+                        t.getBasePrice().currency(),
+                        t.getQuota(),
+                        t.getSoldCount(),
+                        t.getPricingRule().name()
+                ))
+                .toList();
+    }
+
     public static Event toDomain(EventJpaEntity entity) {
+        return toDomain(entity, List.of());
+    }
+
+    public static Event toDomain(EventJpaEntity entity, List<TicketTypeJpaEntity> tierEntities) {
+        List<TicketType> ticketTypes = tierEntities == null ? List.of() : tierEntities.stream()
+                .map(t -> {
+                    PricingRule rule;
+                    try {
+                        rule = PricingRule.valueOf(t.getPricingRule());
+                    } catch (Exception e) {
+                        rule = PricingRule.STANDARD;
+                    }
+                    return new TicketType(
+                            TicketTypeId.of(t.getId()),
+                            t.getName(),
+                            t.getDescription(),
+                            new Money(t.getPriceAmount(), t.getPriceCurrency()),
+                            t.getQuota(),
+                            t.getSoldCount(),
+                            rule
+                    );
+                })
+                .toList();
+
         EventSnapshot snapshot = new EventSnapshot(
                 EventId.of(entity.getId()),
                 entity.getTitle(),
@@ -35,7 +79,8 @@ public final class EventPersistenceMapper {
                 entity.getSoldTicketsCount(),
                 new Money(entity.getPriceAmount(), entity.getPriceCurrency()),
                 entity.getCategory(),
-                entity.getImageUrl()
+                entity.getImageUrl(),
+                ticketTypes
         );
         return Event.restore(snapshot);
     }

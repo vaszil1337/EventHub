@@ -2,7 +2,16 @@ package hu.eventhub.application.port.in;
 
 import java.util.Objects;
 
-public record BookTicketCommand(String eventId, String participantName, String participantEmail) {
+public record BookTicketCommand(
+        String eventId,
+        String participantName,
+        String participantEmail,
+        String ticketTypeId
+) {
+    public BookTicketCommand(String eventId, String participantName, String participantEmail) {
+        this(eventId, participantName, participantEmail, null);
+    }
+
     public BookTicketCommand {
         Objects.requireNonNull(eventId, "Event ID cannot be null");
         Objects.requireNonNull(participantName, "Participant name cannot be null");

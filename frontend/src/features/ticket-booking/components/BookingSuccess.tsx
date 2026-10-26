@@ -8,6 +8,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Alert,
 } from '@mui/material';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
@@ -31,6 +32,8 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const emailFailed = ticket.emailStatus === 'FAILED_PENDING_RETRY';
 
   return (
     <Box sx={{ textAlign: 'center', py: 1 }} data-testid="booking-success-view">
@@ -63,9 +66,27 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
       >
         Booking Confirmed!
       </Typography>
-      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
         Your seat has been reserved and your ticket pass has been generated.
       </Typography>
+
+      {emailFailed && (
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 2.5,
+            textAlign: 'left',
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: 'warning.main',
+            bgcolor: 'warning.light',
+            color: 'warning.dark',
+            fontSize: '0.8rem',
+          }}
+        >
+          <strong>External Email Gateway Notice:</strong> Confirmation email delivery encountered a temporary gateway error. Your ticket is valid and the email has been queued for automatic retry.
+        </Alert>
+      )}
 
       {/* Ticket Pass Container */}
       <Paper
@@ -85,7 +106,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ConfirmationNumberOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Ticket Code
+              Ticket Code {ticket.ticketTypeName ? `• ${ticket.ticketTypeName}` : ''}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
