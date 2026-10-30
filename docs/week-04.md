@@ -28,12 +28,14 @@ A 4. hét célja a tantárgyi követelménytáblázatban rögzített összes **E
      - Globális `AuthProvider` és `useAuth()` hook, amely kezeli a bejelentkezett felhasználót és a JWT tokent.
      - Az `apiClient.ts` automatikusan csatolja az `Authorization: Bearer <token>` fejlécet minden kéréshez.
      - Bejelentkezett felhasználónál a jegyfoglalási űrlap automatikusan kitölti a nevet és e-mail címet.
-5. **Külső Integráció Tesztelt Hibakezeléssel (`EmailNotificationPort`)**:
-   - Kimenő port (`EmailNotificationPort`) és adapter (`SmtpEmailNotificationAdapter`) a jegyvásárlási visszaigazoló e-mailek küldésére.
+5. **Külső Integráció & E-mail Rendszer (`EmailNotificationPort`, Mailpit)**:
+   - Kimenő port (`EmailNotificationPort`) és kibővített infrastruktúra adapter (`SmtpEmailNotificationAdapter`) a jegyvásárlási visszaigazoló e-mailek valós kiküldésére.
+   - **Mailpit Fejlesztői SMTP Környezet**: A `docker-compose.yml`-ben futó `axllent/mailpit` konténer fogadja a leveleket (SMTP port: `1025`), és azonnali böngészős előnézetet biztosít a `http://localhost:8025` webes felületen.
+   - **Formázott HTML és Szöveges E-mail**: A levél tartalmazza a rendezvény részleteit (cím, időpont, helyszín), a jegytípust, a kifizetett árat, valamint kiemelt kártyán a belépéshez szükséges egyedi belépőkódot (`EVT-YYYY-XXXX`).
    - **Reziliens hibakezelés**: Ha a külső e-mail szolgáltató hibát dob (`EmailDeliveryException` – pl. szolgáltatói kiesés vagy `@fail-email.test` tesztcím esetén), a `BookTicketService` elkapja a kivételt, a jegyet `FAILED_PENDING_RETRY` e-mail státusszal menti el, így a tranzakció és a jegyfoglalás nem vész el.
 
 ---
 
 ## 2. Tesztelési Eredmények
-- **Backend (`mvn test`)**: 21/21 teszt sikeres (beleértve a dinamikus surge árazást, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, valamint a külső e-mail szolgáltató hibájának reziliens kezelését).
-- **Frontend (`npm run test:run` & `npm run build`)**: 14/14 Vitest teszt sikeres, TypeScript/Vite produkciós build hibátlan, és minden komponens kizárólag a központi MUI `theme.ts` tokeneket használja.
+- **Backend (`mvn test`)**: 48/48 teszt sikeres (beleértve a dinamikus surge árazást, esemény módosítást, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, a Mailpit/JavaMailSender HTML levélküldést és a hibatűrő fallbacket).
+- **Frontend (`npm run test:run` & `npm run build`)**: 28/28 Vitest teszt sikeres, TypeScript/Vite produkciós build hibátlan, perzisztens auth-kezeléssel és központi MUI `theme.ts` tokenekkel.

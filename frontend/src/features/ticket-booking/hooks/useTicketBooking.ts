@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { ticketService } from '@/features/ticket-booking/services/ticketService';
+import { getClientLanguage } from '@/shared/services/apiClient';
 
 interface UseTicketBookingOptions {
   onSuccess?: (ticket: Ticket) => void;
@@ -47,6 +48,7 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
         participantName,
         participantEmail,
         ticketTypeId: selectedTicketTypeId || undefined,
+        locale: getClientLanguage(),
       });
 
       setBookedTicket(ticket);

@@ -56,16 +56,34 @@ public class TicketController {
     }
 
     @PostMapping("/book")
-    public ResponseEntity<TicketResponse> bookTicket(@RequestBody BookingRequest request) {
+    public ResponseEntity<TicketResponse> bookTicket(
+            @RequestBody BookingRequest request,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguageHeader
+    ) {
+        String locale = resolveLocale(request.locale(), acceptLanguageHeader);
         BookTicketCommand command = new BookTicketCommand(
                 request.eventId(),
                 request.participantName(),
                 request.participantEmail(),
-                request.ticketTypeId()
+                request.ticketTypeId(),
+                locale
         );
         Ticket bookedTicket = bookTicketUseCase.bookTicket(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(TicketResponseMapper.toResponse(bookedTicket));
+    }
+
+    private String resolveLocale(String requestLocale, String acceptLanguageHeader) {
+        if (requestLocale != null && !requestLocale.isBlank()) {
+            return requestLocale.trim().toLowerCase();
+        }
+        if (acceptLanguageHeader != null && !acceptLanguageHeader.isBlank()) {
+            String lower = acceptLanguageHeader.trim().toLowerCase();
+            if (lower.startsWith("hu") || lower.contains("hu-")) {
+                return "hu";
+            }
+        }
+        return "en";
     }
 
     @PostMapping("/{ticketId}/cancel")

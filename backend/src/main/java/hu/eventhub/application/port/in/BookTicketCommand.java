@@ -6,10 +6,15 @@ public record BookTicketCommand(
         String eventId,
         String participantName,
         String participantEmail,
-        String ticketTypeId
+        String ticketTypeId,
+        String locale
 ) {
     public BookTicketCommand(String eventId, String participantName, String participantEmail) {
-        this(eventId, participantName, participantEmail, null);
+        this(eventId, participantName, participantEmail, null, "en");
+    }
+
+    public BookTicketCommand(String eventId, String participantName, String participantEmail, String ticketTypeId) {
+        this(eventId, participantName, participantEmail, ticketTypeId, "en");
     }
 
     public BookTicketCommand {
@@ -25,5 +30,6 @@ public record BookTicketCommand(
         if (participantEmail.trim().isBlank() || !participantEmail.contains("@")) {
             throw new IllegalArgumentException("A valid participant email is required");
         }
+        locale = (locale != null && !locale.isBlank()) ? locale.trim().toLowerCase() : "en";
     }
 }

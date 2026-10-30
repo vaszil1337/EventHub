@@ -28,7 +28,7 @@ public class BookTicketService implements BookTicketUseCase {
             TicketCodeGenerator ticketCodeGenerator,
             Clock clock
     ) {
-        this(eventRepository, ticketRepository, ticketCodeGenerator, clock, (ticket, event) -> {});
+        this(eventRepository, ticketRepository, ticketCodeGenerator, clock, (ticket, event, locale) -> {});
     }
 
     public BookTicketService(
@@ -94,7 +94,7 @@ public class BookTicketService implements BookTicketUseCase {
 
         // External Email Integration with resilient error handling
         try {
-            emailNotificationPort.sendTicketConfirmation(ticket, event);
+            emailNotificationPort.sendTicketConfirmation(ticket, event, command.locale());
             ticket.markEmailStatus(EmailDeliveryStatus.SENT);
         } catch (Exception ex) {
             log.warn("External email provider failed to send confirmation for ticket {}: {}. Marking for retry.",

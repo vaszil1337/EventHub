@@ -1,5 +1,6 @@
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 const TOKEN_STORAGE_KEY = 'eventhub_auth_token';
+const LANGUAGE_STORAGE_KEY = 'eventhub_language';
 
 function getStoredToken(): string | null {
   try {
@@ -26,7 +27,20 @@ function persistToken(token: string | null): void {
   }
 }
 
+function getStoredLanguage(): string {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored) return stored;
+    }
+  } catch {
+    // ignore
+  }
+  return 'en';
+}
+
 let currentAuthToken: string | null = getStoredToken();
+let currentLanguage: string = getStoredLanguage();
 
 export function setAuthToken(token: string | null): void {
   currentAuthToken = token;
@@ -40,9 +54,20 @@ export function getAuthToken(): string | null {
   return currentAuthToken;
 }
 
+export function setClientLanguage(lang: string): void {
+  currentLanguage = lang;
+}
+
+export function getClientLanguage(): string {
+  if (!currentLanguage) {
+    currentLanguage = getStoredLanguage();
+  }
+  return currentLanguage;
+}
+
 /**
  * Universal fetch wrapper for communicating with the backend REST API.
- * Automatically attaches the JWT Bearer token when a user is authenticated.
+ * Automatically attaches the JWT Bearer token and Accept-Language header.
  */
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = endpoint.startsWith('http')
@@ -51,6 +76,7 @@ export async function apiFetch<T>(endpoint: string, options?: RequestInit): Prom
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept-Language': getClientLanguage(),
     ...((options?.headers as Record<string, string>) || {}),
   };
 

@@ -22,6 +22,7 @@ export interface BookingRequest {
   participantName: string;
   participantEmail: string;
   ticketTypeId?: string;
+  locale?: string;
 }
 
 /**

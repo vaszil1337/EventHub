@@ -119,13 +119,17 @@ backend/
 
 ## 🚀 Indítás és Futtatás
 
-### 1. PostgreSQL Adatbázis Indítása Dockerrel
-A projekt gyökerében található `docker-compose.yml` indítja a dedikált PostgreSQL konténert az elvárt konfigurációval (`eventhub` adatbázis, `postgres`/`postgres` felhasználó, `5432`-es port):
+### 1. PostgreSQL Adatbázis és Mailpit SMTP Szerver Indítása Dockerrel
+A projekt gyökerében található `docker-compose.yml` elindítja a PostgreSQL adatbázist és a helyi Mailpit teszt email környezetet:
+- **PostgreSQL**: `localhost:5432` (`eventhub` adatbázis, `postgres`/`postgres`)
+- **Mailpit SMTP**: `localhost:1025` (ezen a porton keresztül küldi a Spring Boot az e-maileket)
+- **Mailpit Web UI**: `http://localhost:8025` (böngészőben azonnal megtekinthetők a kiküldött jegy-visszaigazoló levelek)
+
 ```bash
 docker compose up -d
 ```
 
-A konténer leállítása:
+A konténerek leállítása:
 ```bash
 docker compose down
 ```
@@ -152,6 +156,21 @@ mvn spring-boot:run
 
 ---
 
+## 📬 E-mail Értesítések Megtekintése (Mailpit)
+Amikor egy látogató vagy felhasználó jegyet foglal a felületen (`POST /api/tickets/book`), az alkalmazás a **Hexagonális Architektúra** elveit követve az `EmailNotificationPort` kimenő porton és az `SmtpEmailNotificationAdapter`-en keresztül valós SMTP levelet küld a helyi Mailpit szerverre.
+
+1. Nyisd meg a böngésződben: **`http://localhost:8025`**
+2. Vásárolj egy jegyet a weboldalon (vendégként vagy bejelentkezve)
+3. A Mailpit webes postaládájában azonnal megjelenik a beérkezett visszaigazolás:
+   - Reszponzív HTML dizájn EventHub arculattal
+   - Esemény címe, időpontja, helyszíne
+   - Kiválasztott jegytípus és ár
+   - Kiemelt, másolható **egyedi jegykód (`EVT-YYYY-XXXX`)**
+   - Plain Text alternatíva egyszerű levelezőkliensekhez
+   - Reziliens hibatűrés: ha az e-mail szolgáltatás elérhetetlen, a jegy `FAILED_PENDING_RETRY` státusszal mentődik el a tranzakció elvesztése nélkül
+
+---
+
 ## 📡 REST Végpontok
 
 | Metódus | Útvonal | Leírás | Siker Kód | Hiba Kód |
@@ -161,6 +180,7 @@ mvn spring-boot:run
 | `GET` | `/api/auth/me` | Aktuális bejelentkezett profil (`Authorization: Bearer <jwt>`) | `200 OK` | `401 Unauthorized` |
 | `GET` | `/api/events` | Összes esemény listázása (jegytípusokkal és dinamikus árakkal) | `200 OK` | - |
 | `GET` | `/api/events/{id}` | Egyedi esemény lekérése | `200 OK` | `404 Not Found` |
+| `PUT` | `/api/events/{id}` | Esemény adatainak szerkesztése (`ORGANIZER` JWT token kötelező) | `200 OK` | `403 Forbidden`, `404 Not Found`, `400 Bad Request` |
 | `POST` | `/api/events` | Új esemény létrehozása (`ORGANIZER` JWT token kötelező) | `201 Created` | `403 Forbidden`, `400 Bad Request` |
 | `POST` | `/api/events/{id}/ticket-types` | Új jegytípus hozzáadása eseményhez (`ORGANIZER` JWT token) | `201 Created` | `403 Forbidden`, `404 Not Found` |
 | `POST` | `/api/events/reset` | Események és jegyek alaphelyzetbe állítása | `200 OK` | - |

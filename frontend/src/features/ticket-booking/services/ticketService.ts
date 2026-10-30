@@ -47,6 +47,9 @@ export const ticketService = {
       if (request.ticketTypeId) {
         payload.ticketTypeId = request.ticketTypeId;
       }
+      if (request.locale) {
+        payload.locale = request.locale;
+      }
       return await apiFetch<Ticket>('/tickets/book', {
         method: 'POST',
         body: JSON.stringify(payload),

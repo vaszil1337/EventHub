@@ -19,6 +19,7 @@ import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
 import { AuthUser } from '@/features/auth/types';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface NavbarProps {
   totalTicketsCount?: number;
@@ -196,6 +197,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Manage Events
               </Button>
             )}
+
+            {/* Language Switcher (EN / HU) */}
+            <LanguageSwitcher />
 
             {/* Authenticated User Badge or Sign In Button */}
             {user ? (

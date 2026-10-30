@@ -8,6 +8,7 @@ import { BookingDialog } from '@/features/ticket-booking/components/BookingDialo
 import { OrganizerEventDialog } from '@/features/events/components/OrganizerEventDialog';
 import { EditEventDialog } from '@/features/events/components/EditEventDialog';
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
+import { I18nProvider } from '@/shared/context/I18nContext';
 import { AuthDialog } from '@/features/auth/components/AuthDialog';
 import { AuthUser } from '@/features/auth/types';
 import { Event } from '@/features/events/types';
@@ -275,9 +276,11 @@ function AppShell() {
 
 export function App() {
   return (
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
+    </I18nProvider>
   );
 }
 
