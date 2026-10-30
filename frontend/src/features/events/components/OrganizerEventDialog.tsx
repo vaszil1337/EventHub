@@ -22,6 +22,7 @@ import { Event, PricingRule } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle } from '@/shared/utils/eventLocalization';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface OrganizerEventDialogProps {
   open: boolean;
@@ -97,7 +98,8 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
       onEventCreatedOrUpdated(created, t('organizer.eventCreatedSuccess', { title: localizedTitle }));
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Failed to create event.');
+      const raw = err?.body?.message || err?.message;
+      setError(raw ? translateBackendMessage(raw, t) : t('organizer.createEventFailed'));
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,8 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
       onEventCreatedOrUpdated(updated, t('organizer.tierAddedSuccess', { tier: tierName, title: localizedTitle }));
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Failed to add ticket tier.');
+      const raw = err?.body?.message || err?.message;
+      setError(raw ? translateBackendMessage(raw, t) : t('organizer.addTierFailed'));
     } finally {
       setLoading(false);
     }

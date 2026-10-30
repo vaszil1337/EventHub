@@ -23,6 +23,7 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import { AuthUser } from '@/features/auth/types';
 import { UserRole } from '@/features/events/types';
 import { useTranslation } from '@/shared/context/I18nContext';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface AuthDialogProps {
   open: boolean;
@@ -58,7 +59,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       }
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Invalid email or password.');
+      const raw = err?.body?.message || err?.message || 'Invalid email or password.';
+      setError(translateBackendMessage(raw, t));
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       }
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Demo login failed.');
+      const raw = err?.body?.message || err?.message;
+      setError(raw ? translateBackendMessage(raw, t) : t('auth.demoLoginFailed'));
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       }
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Registration failed.');
+      const raw = err?.body?.message || err?.message;
+      setError(raw ? translateBackendMessage(raw, t) : t('auth.registerFailed'));
     } finally {
       setLoading(false);
     }
@@ -119,8 +123,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           p: { xs: 2.5, sm: 3 },
           boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
           // Compact, fixed height to prevent layout shifts without excessive whitespace
-          height: { xs: 'auto', sm: 475 },
-          minHeight: { xs: 'auto', sm: 475 },
+          height: { xs: 'auto', sm: 490 },
+          minHeight: { xs: 'auto', sm: 490 },
           display: 'flex',
           flexDirection: 'column',
         },
@@ -197,10 +201,13 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       <DialogContent
         sx={{
           p: 0,
+          pt: 1,
+          px: 0.25,
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
+          overflowX: 'visible',
         }}
       >
         {error && (
@@ -224,7 +231,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           <Box
             component="form"
             onSubmit={handleLogin}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0.5 }}
           >
             <TextField
               required
@@ -308,7 +315,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           <Box
             component="form"
             onSubmit={handleRegister}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0.5 }}
           >
             <TextField
               required

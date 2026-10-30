@@ -17,6 +17,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Event } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 import { useTranslation } from '@/shared/context/I18nContext';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface EditEventDialogProps {
   open: boolean;
@@ -104,7 +105,8 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
       onEventUpdated(updated);
       onClose();
     } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Failed to update event.');
+      const raw = err?.body?.message || err?.message;
+      setError(raw ? translateBackendMessage(raw, t) : t('organizer.updateEventFailed'));
     } finally {
       setLoading(false);
     }

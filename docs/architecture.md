@@ -26,7 +26,8 @@ Az EventHub célja egy modern, skálázható és felhasználóbarát eseménysze
 | **Frontend Tesztelés** | Vitest + React Testing Library | Unit és integrációs komponens tesztelés |
 | **Backend** | Spring Boot 3.x / 4.x (Java 21 LTS) | Hexagonális Architektúra (DDD) REST API |
 | **Adatbázis (Kizárólag)** | PostgreSQL | Kizárólagos relációs perzisztencia minden esetben ACID garanciákkal |
-| **Migráció** | Flyway | Verziózott adatbázis sémakezelés (V1, V2, V3) |
+| **Migráció** | Flyway | Verziózott adatbázis sémakezelés (V1, V2, V3, V4) |
+| **Nemzetköziesítés (i18n)** | React Context + Typesafe Dicts | Kétnyelvű (HU / EN) dinamikus fordítási rendszer |
 
 ---
 
@@ -56,7 +57,7 @@ EventHub/
 │       │   │   └── infrastructure/# Adapterek (configuration, persistence/jpa, web)
 │       │   └── resources/
 │       │       ├── application.properties
-│       │       └── db/migration/  # Flyway SQL migrációk (V1, V2, V3)
+│       │       └── db/migration/  # Flyway SQL migrációk (V1, V2, V3, V4)
 │       └── test/                  # Domain, UseCase és Web tesztek (100% pass)
 │
 └── frontend/                      # React + TypeScript + MUI projekt
@@ -66,30 +67,36 @@ EventHub/
     ├── index.html                 # HTML belépési pont
     └── src/
         ├── features/              # Feature-Driven modulok
+        │   ├── auth/              # Felhasználói autentikáció & szerepkörök modul
+        │   │   ├── components/    # AuthDialog
+        │   │   ├── context/       # AuthContext (JWT, Login, Logout)
+        │   │   └── services/      # authService.ts
         │   ├── events/            # Eseménykezelés modul
-        │   │   ├── components/    # EventCard, EventList, CapacityBadge
+        │   │   ├── components/    # EventCard, EventList, CapacityBadge, OrganizerEventDialog, EditEventDialog
         │   │   ├── hooks/         # useEvents hook
         │   │   ├── services/      # eventService.ts (API absztrakció)
-        │   │   └── types/         # Event, Venue típusok
+        │   │   └── types/         # Event, Venue, TicketType, PricingRule típusok
         │   └── ticket-booking/    # Jegyfoglalás modul
         │       ├── components/    # BookingDialog, BookingForm, BookingSuccess
         │       ├── hooks/         # useTicketBooking hook
-        │       ├── services/      # ticketService.ts (Kapacitásellenőrzés, jegykiadás)
+        │       ├── services/      # ticketService.ts (Kapacitásellenőrzés, jegykiadás, lemondás)
         │       └── types/         # Ticket, BookingRequest, CapacityExceededError
         │
         ├── pages/                 # React Router oldal-szintű komponensek
         │   ├── EventsPage.tsx     # Főoldali eseménykatalógus
         │   ├── EventDetailPage.tsx# Egyedi esemény részletező nézet
-        │   └── TicketsPage.tsx    # Kiadott jegyek áttekintése
+        │   └── TicketsPage.tsx    # Kiadott jegyek áttekintése (Szervező & Résztvevő nézetek)
         │
         ├── shared/                # Globális megosztott modulok
+        │   ├── context/           # I18nContext (Nyelvkezelés & t() segédfüggvény)
+        │   ├── locales/           # Típusbiztos nyelvi szótárak (en.ts, hu.ts, types.ts)
         │   ├── types/             # Money értékobjektum
-        │   ├── ui/                # Navbar, NotificationSnackbar, Theme beállítás
-        │   └── utils/             # localStorage helper, codeGenerator, formatters, seedData
+        │   ├── ui/                # Navbar, LanguageSwitcher, NotificationSnackbar, Theme beállítás
+        │   └── utils/             # apiClient, eventLocalization, errorTranslator, formatters, seedData
         │
         ├── test/                  # Tesztkörnyezet setup (vitest + RTL)
         ├── App.tsx                # Fő útvonalkezelő és elrendezés (Layout)
-        └── main.tsx               # Belépési pont (ThemeProvider, CssBaseline)
+        └── main.tsx               # Belépési pont (I18nProvider, AuthProvider, ThemeProvider)
 ```
 
 ---
@@ -124,13 +131,16 @@ interface Venue {
 interface Event {
   id: string;
   title: string;
+  titleHu?: string; // Opcionális magyar cím
   description: string;
+  descriptionHu?: string; // Opcionális magyar leírás
   date: string; // ISO 8601 formátum
   venue: Venue;
   soldTicketsCount: number; // Eladott jegyek száma
   price: Money;
   category?: string;
   imageUrl?: string;
+  ticketTypes?: TicketType[]; // Kapcsolódó jegykategóriák
 }
 ```
 

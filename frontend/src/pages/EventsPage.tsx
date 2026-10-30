@@ -10,7 +10,7 @@ import { useTranslation } from '@/shared/context/I18nContext';
 
 interface EventsPageProps {
   events: Event[];
-  allEvents: Event[];
+  allEvents?: Event[];
   loading: boolean;
   error: string | null;
   searchTerm: string;
@@ -24,7 +24,6 @@ interface EventsPageProps {
 
 export const EventsPage: React.FC<EventsPageProps> = ({
   events,
-  allEvents,
   loading,
   error,
   searchTerm,
@@ -51,26 +50,6 @@ export const EventsPage: React.FC<EventsPageProps> = ({
       >
         <Container maxWidth="lg">
           <Box sx={{ maxWidth: 680 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 1.5,
-                py: 0.5,
-                borderRadius: '9999px',
-                bgcolor: 'action.hover',
-                color: 'text.secondary',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-                mb: 2,
-              }}
-            >
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
-              {t('events.curatedBadge', { count: allEvents.length })}
-            </Box>
-
             <Typography
               variant="h3"
               component="h1"

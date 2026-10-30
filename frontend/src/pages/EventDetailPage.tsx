@@ -23,6 +23,7 @@ import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface EventDetailPageProps {
   onBookTicket: (event: Event) => void;
@@ -48,12 +49,12 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
         setLoading(true);
         const data = await eventService.getEventById(id);
         if (!data) {
-          setError(`Event with ID "${id}" was not found.`);
+          setError(t('backend_messages.event_not_found'));
         } else {
           setEvent(data);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load event details.');
+        setError(err instanceof Error ? err.message : t('backend_messages.generic_error'));
       } finally {
         setLoading(false);
       }
@@ -83,7 +84,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
             color: 'error.dark',
           }}
         >
-          {error || 'Event not found.'}
+          {error ? translateBackendMessage(error, t) : t('backend_messages.event_not_found')}
         </Alert>
         <Button
           component={RouterLink}

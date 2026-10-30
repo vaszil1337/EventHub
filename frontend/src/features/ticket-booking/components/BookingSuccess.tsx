@@ -18,6 +18,7 @@ import { Ticket } from '@/features/ticket-booking/types';
 import { Event } from '@/features/events/types';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
+import { getLocalizedEventTitle, getLocalizedTierName } from '@/shared/utils/eventLocalization';
 
 interface BookingSuccessProps {
   ticket: Ticket;
@@ -36,7 +37,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
   };
 
   const emailFailed = ticket.emailStatus === 'FAILED_PENDING_RETRY';
-  const displayTitle = locale === 'hu' && event.titleHu ? event.titleHu : event.title;
+  const displayTitle = getLocalizedEventTitle(event, locale);
 
   return (
     <Box sx={{ textAlign: 'center', py: 1 }} data-testid="booking-success-view">
@@ -109,7 +110,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ConfirmationNumberOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {t('booking.ticketCode')} {ticket.ticketTypeName ? `• ${ticket.ticketTypeName}` : ''}
+              {t('booking.ticketCode')} {ticket.ticketTypeName ? `• ${getLocalizedTierName(ticket.ticketTypeName, locale)}` : ''}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -155,10 +156,10 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
               {t('booking.amountPaid')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              {formatMoney(ticket.price)}
+              {formatMoney(ticket.price, locale)}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {new Date(ticket.purchaseDate).toLocaleDateString()}
+              {new Date(ticket.purchaseDate).toLocaleDateString(locale === 'hu' ? 'hu-HU' : 'en-US')}
             </Typography>
           </Box>
         </Box>
@@ -173,7 +174,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
             {displayTitle}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {formatEventDate(event.date)} • {event.venue.name}
+            {formatEventDate(event.date, locale)} • {event.venue.name}
           </Typography>
         </Box>
       </Paper>

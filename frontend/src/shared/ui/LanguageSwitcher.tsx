@@ -1,105 +1,86 @@
 import React from 'react';
-import { Box, ButtonBase, Typography } from '@mui/material';
+import {
+  FormControl,
+  Select,
+  MenuItem,
+  Box,
+  Typography,
+  SelectChangeEvent,
+} from '@mui/material';
 import TranslateOutlinedIcon from '@mui/icons-material/TranslateOutlined';
+import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
 import { useTranslation } from '../context/I18nContext';
 import { Locale } from '../locales/types';
 
 export const LanguageSwitcher: React.FC = () => {
   const { locale, setLocale, t } = useTranslation();
 
-  const handleSelect = (newLocale: Locale) => {
-    if (newLocale !== locale) {
-      setLocale(newLocale);
+  const handleChange = (event: SelectChangeEvent<string>) => {
+    const selected = event.target.value as Locale;
+    if (selected !== locale) {
+      setLocale(selected);
     }
   };
 
   return (
-    <Box
-      data-testid="language-switcher"
-      aria-label={t('common.language')}
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        borderRadius: '8px',
-        bgcolor: 'action.hover',
-        border: '1px solid',
-        borderColor: 'divider',
-        p: '2px',
-        gap: '2px',
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pl: 0.75,
-          pr: 0.25,
-          color: 'text.secondary',
+    <FormControl size="small" data-testid="language-switcher">
+      <Select
+        value={locale}
+        onChange={handleChange}
+        IconComponent={KeyboardArrowDownOutlinedIcon}
+        inputProps={{
+          'aria-label': t('common.language'),
+          'data-testid': 'language-select-input',
         }}
-      >
-        <TranslateOutlinedIcon sx={{ fontSize: 14 }} />
-      </Box>
-
-      <ButtonBase
-        onClick={() => handleSelect('en')}
-        data-testid="language-btn-en"
-        aria-pressed={locale === 'en'}
+        data-testid="language-select"
         sx={{
-          px: 1,
-          py: 0.4,
-          borderRadius: '6px',
-          bgcolor: locale === 'en' ? 'background.paper' : 'transparent',
-          color: locale === 'en' ? 'text.primary' : 'text.secondary',
-          boxShadow: locale === 'en' ? 1 : 'none',
-          transition: 'all 0.15s ease-in-out',
-          '&:hover': {
-            color: 'text.primary',
+          height: 36,
+          borderRadius: '8px',
+          bgcolor: 'action.hover',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: 'text.primary',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'divider',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'text.secondary',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'primary.main',
+          },
+          '& .MuiSelect-select': {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            py: 0.75,
+            pr: '32px !important',
           },
         }}
+        renderValue={(selected) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <TranslateOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
+              {selected.toUpperCase()}
+            </Typography>
+          </Box>
+        )}
       >
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: locale === 'en' ? 700 : 500,
-            fontSize: '0.72rem',
-            lineHeight: 1,
-            letterSpacing: '0.5px',
-          }}
-        >
-          EN
-        </Typography>
-      </ButtonBase>
-
-      <ButtonBase
-        onClick={() => handleSelect('hu')}
-        data-testid="language-btn-hu"
-        aria-pressed={locale === 'hu'}
-        sx={{
-          px: 1,
-          py: 0.4,
-          borderRadius: '6px',
-          bgcolor: locale === 'hu' ? 'background.paper' : 'transparent',
-          color: locale === 'hu' ? 'text.primary' : 'text.secondary',
-          boxShadow: locale === 'hu' ? 1 : 'none',
-          transition: 'all 0.15s ease-in-out',
-          '&:hover': {
-            color: 'text.primary',
-          },
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: locale === 'hu' ? 700 : 500,
-            fontSize: '0.72rem',
-            lineHeight: 1,
-            letterSpacing: '0.5px',
-          }}
-        >
-          HU
-        </Typography>
-      </ButtonBase>
-    </Box>
+        <MenuItem value="en" data-testid="language-btn-en">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: locale === 'en' ? 700 : 500, fontSize: '0.85rem' }}>
+              English (EN)
+            </Typography>
+          </Box>
+        </MenuItem>
+        <MenuItem value="hu" data-testid="language-btn-hu">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: locale === 'hu' ? 700 : 500, fontSize: '0.85rem' }}>
+              Magyar (HU)
+            </Typography>
+          </Box>
+        </MenuItem>
+      </Select>
+    </FormControl>
   );
 };

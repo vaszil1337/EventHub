@@ -47,7 +47,8 @@ import { Event, UserRole } from '@/features/events/types';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
-import { getLocalizedEventTitle } from '@/shared/utils/eventLocalization';
+import { getLocalizedEventTitle, getLocalizedTierName } from '@/shared/utils/eventLocalization';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface TicketsPageProps {
   userRole?: UserRole;
@@ -100,7 +101,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
         );
         setEventMap(eventsByIdMap);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load tickets.');
+        setError(err instanceof Error ? err.message : t('tickets.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -129,7 +130,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
         onTicketCancelled(cancelled);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel ticket.');
+      setError(err instanceof Error ? err.message : t('tickets.cancelFailed'));
     } finally {
       setCancellingId(null);
     }
@@ -297,8 +298,8 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
 
               <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                 {effectiveRole === 'ORGANIZER'
-                  ? t('tickets.organizerSubtitle', { name: cleanUserName || 'Organizer', email: user?.email || '' })
-                  : t('tickets.myTicketsSubtitle', { name: cleanUserName || 'User', email: user?.email || '' })}
+                  ? t('tickets.organizerSubtitle', { name: cleanUserName || t('auth.organizer'), email: user?.email || '' })
+                  : t('tickets.myTicketsSubtitle', { name: cleanUserName || t('auth.participant'), email: user?.email || '' })}
               </Typography>
             </Box>
 
@@ -337,7 +338,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
               color: 'error.dark',
             }}
           >
-            {error}
+            {translateBackendMessage(error, t)}
           </Alert>
         )}
 
@@ -574,7 +575,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                     label={t('tickets.filterEventLabel')}
                     onChange={(e) => setSelectedEventFilter(e.target.value)}
                   >
-                    <MenuItem value="ALL">{t('tickets.allEventsFilterCount', { count: Object.keys(eventMap).length || 'All' })}</MenuItem>
+                    <MenuItem value="ALL">{t('tickets.allEventsFilterCount', { count: Object.keys(eventMap).length })}</MenuItem>
                     {Object.values(eventMap).map((ev) => (
                       <MenuItem key={ev.id} value={ev.id}>
                         {getLocalizedEventTitle(ev, locale)}
@@ -715,7 +716,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                           {/* Tier & Price */}
                           <TableCell sx={{ py: 2 }}>
                             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', textTransform: 'uppercase' }}>
-                              {ticket.ticketTypeName || t('common.standard')}
+                              {ticket.ticketTypeName ? getLocalizedTierName(ticket.ticketTypeName, locale) : t('common.standard')}
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontFeatureSettings: '"tnum"' }}>
                               {formatMoney(ticket.price, locale)}
@@ -1013,7 +1014,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 display: 'block',
                               }}
                             >
-                              {t('tickets.tierLabel')}: {ticket.ticketTypeName}
+                              {t('tickets.tierLabel')}: {ticket.ticketTypeName ? getLocalizedTierName(ticket.ticketTypeName, locale) : t('common.standard')}
                             </Typography>
                           )}
 

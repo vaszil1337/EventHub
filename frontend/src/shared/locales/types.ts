@@ -23,6 +23,16 @@ export interface TranslationDictionary {
     general: string;
     [key: string]: string;
   };
+  tiers: {
+    standardPass: string;
+    earlyBirdPass: string;
+    vipPass: string;
+    studentPass: string;
+    descEarlyBird: string;
+    descStandardSurge: string;
+    descStandardGeneral: string;
+    descVipLounge: string;
+  };
   nav: {
     brandTitle: string;
     brandSubtitle: string;
@@ -53,6 +63,10 @@ export interface TranslationDictionary {
     organizerDemo: string;
     welcomeBack: string;
     registrationSuccess: string;
+    signedInAs: string;
+    signedOutSuccess: string;
+    demoLoginFailed: string;
+    registerFailed: string;
   };
   events: {
     curatedBadge: string;
@@ -111,6 +125,15 @@ export interface TranslationDictionary {
     yourPasscode: string;
     copyCode: string;
     codeCopied: string;
+    ruleEarlyBirdDiscount: string;
+    ruleVipSurge: string;
+    ruleHighDemandSurge: string;
+    ruleEarlyBirdTier: string;
+    ruleVipAccess: string;
+    ruleDynamicPricing: string;
+    ruleFixedPrice: string;
+    ruleStandardTier: string;
+    ticketReservedSuccess: string;
   };
   organizer: {
     dialogTitle: string;
@@ -156,6 +179,9 @@ export interface TranslationDictionary {
     eventUpdatedSuccess: string;
     seatsCount: string;
     placeholderVenueAddress: string;
+    updateEventFailed: string;
+    createEventFailed: string;
+    addTierFailed: string;
   };
   tickets: {
     pillReservations: string;
@@ -216,6 +242,9 @@ export interface TranslationDictionary {
     browseEvents: string;
     noTicketsYet: string;
     noTicketsYetDesc: string;
+    reservationCancelledSuccess: string;
+    loadFailed: string;
+    cancelFailed: string;
   };
   backend_messages: {
     capacity_exceeded: string;

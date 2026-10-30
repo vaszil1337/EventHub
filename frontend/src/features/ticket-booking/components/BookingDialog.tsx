@@ -126,7 +126,7 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
           </Typography>
         </Box>
         <IconButton
-          aria-label="close"
+          aria-label={t('common.close')}
           onClick={handleClose}
           disabled={loading}
           size="small"

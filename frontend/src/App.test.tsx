@@ -145,8 +145,10 @@ describe('App End-to-End Component Flow with React Router', () => {
       expect(screen.getByText('Tech Horizons Summit 2026')).toBeInTheDocument();
     });
 
-    // Language switcher toggle to Hungarian
-    const huButton = screen.getByTestId('language-btn-hu');
+    // Language switcher dropdown to Hungarian
+    const langSelect = screen.getByRole('combobox', { name: /Language|Nyelv/i });
+    await user.click(langSelect);
+    const huButton = await screen.findByTestId('language-btn-hu');
     await user.click(huButton);
 
     // Event title should now be rendered in Hungarian
@@ -161,7 +163,8 @@ describe('App End-to-End Component Flow with React Router', () => {
     expect(screen.getByText('Saját jegyek')).toBeInTheDocument();
 
     // Switch back to English
-    const enButton = screen.getByTestId('language-btn-en');
+    await user.click(langSelect);
+    const enButton = await screen.findByTestId('language-btn-en');
     await user.click(enButton);
 
     await waitFor(() => {

@@ -15,6 +15,12 @@ import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import { Event, TicketType } from '@/features/events/types';
 import { formatMoney } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
+import {
+  getLocalizedEventTitle,
+  getLocalizedTierName,
+  getLocalizedTierDescription,
+} from '@/shared/utils/eventLocalization';
+import { translateBackendMessage } from '@/shared/utils/errorTranslator';
 
 interface BookingFormProps {
   event: Event;
@@ -30,24 +36,24 @@ interface BookingFormProps {
   onCancel: () => void;
 }
 
-function formatRuleLabel(tier: TicketType): string {
+function formatRuleLabel(tier: TicketType, t: (key: any) => string): string {
   if (tier.effectivePrice.amount < tier.basePrice.amount) {
-    return 'EARLY BIRD -20%';
+    return t('booking.ruleEarlyBirdDiscount');
   }
   if (tier.effectivePrice.amount > tier.basePrice.amount) {
-    return tier.pricingRule === 'VIP' ? 'SCARCITY +10%' : 'HIGH DEMAND +15%';
+    return tier.pricingRule === 'VIP' ? t('booking.ruleVipSurge') : t('booking.ruleHighDemandSurge');
   }
   switch (tier.pricingRule) {
     case 'EARLY_BIRD':
-      return 'EARLY BIRD TIER';
+      return t('booking.ruleEarlyBirdTier');
     case 'VIP':
-      return 'VIP ACCESS';
+      return t('booking.ruleVipAccess');
     case 'DYNAMIC_SURGE':
-      return 'DYNAMIC PRICING';
+      return t('booking.ruleDynamicPricing');
     case 'FIXED':
-      return 'FIXED PRICE';
+      return t('booking.ruleFixedPrice');
     default:
-      return 'STANDARD TIER';
+      return t('booking.ruleStandardTier');
   }
 }
 
@@ -69,7 +75,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const tiers = event.ticketTypes || [];
   const activeTier = tiers.find((t) => t.id === selectedTicketTypeId) || tiers[0];
   const displayPrice = activeTier ? activeTier.effectivePrice : event.price;
-  const displayTitle = locale === 'hu' && event.titleHu ? event.titleHu : event.title;
+  const displayTitle = getLocalizedEventTitle(event, locale);
 
   return (
     <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
@@ -95,7 +101,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {t('events.price')}: {formatMoney(displayPrice)}
+            {t('events.price')}: {formatMoney(displayPrice, locale)}
           </Typography>
           <Typography
             variant="body2"
@@ -134,6 +140,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               const isSelected = (selectedTicketTypeId || tiers[0]?.id) === tier.id;
               const isDiscounted = tier.effectivePrice.amount < tier.basePrice.amount;
               const isSurged = tier.effectivePrice.amount > tier.basePrice.amount;
+              const tierName = getLocalizedTierName(tier.name, locale);
+              const tierDescription = getLocalizedTierDescription(tier.description, locale);
 
               return (
                 <Box
@@ -161,7 +169,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                   <Box sx={{ pr: 1.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                        {tier.name}
+                        {tierName}
                       </Typography>
                       <Box
                         sx={{
@@ -188,11 +196,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                               : 'divider',
                         }}
                       >
-                        {formatRuleLabel(tier)}
+                        {formatRuleLabel(tier, t)}
                       </Box>
                     </Box>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
-                      {tier.description} • {t('booking.leftBadge', { count: tier.quota - tier.soldCount, quota: tier.quota })}
+                      {tierDescription} • {t('booking.leftBadge', { count: tier.quota - tier.soldCount, quota: tier.quota })}
                     </Typography>
                   </Box>
 
@@ -207,11 +215,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                           lineHeight: 1,
                         }}
                       >
-                        {formatMoney(tier.basePrice)}
+                        {formatMoney(tier.basePrice, locale)}
                       </Typography>
                     )}
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                      {tierSoldOut ? t('events.soldOut') : formatMoney(tier.effectivePrice)}
+                      {tierSoldOut ? t('events.soldOut') : formatMoney(tier.effectivePrice, locale)}
                     </Typography>
                   </Box>
                 </Box>
@@ -229,20 +237,19 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           sx={{
             mb: 2.5,
             borderRadius: '8px',
+            bgcolor: 'action.hover',
             border: '1px solid',
-            borderColor: 'warning.main',
-            bgcolor: 'warning.light',
-            color: 'warning.dark',
+            borderColor: 'divider',
+            color: 'text.primary',
             fontSize: '0.8125rem',
           }}
           data-testid="capacity-warning-alert"
         >
-          <strong>{t('booking.capacityNoticeTitle')}</strong>{' '}
-          {t('booking.capacityNoticeText', { sold: event.soldTicketsCount, capacity: event.venue.capacity })}
+          <strong>{t('booking.capacityNoticeTitle')}</strong> {t('booking.capacityNoticeText', { sold: event.soldTicketsCount, capacity: event.venue.capacity })}
         </Alert>
       )}
 
-      {/* Error Alert */}
+      {/* Dynamic Backend Error Alert */}
       {error && (
         <Alert
           severity="error"
@@ -257,73 +264,86 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           }}
           data-testid="booking-error-alert"
         >
-          {error}
+          {translateBackendMessage(error, t)}
         </Alert>
       )}
 
-      <TextField
-        fullWidth
-        required
-        label={t('booking.participantName')}
-        placeholder={t('booking.participantNamePlaceholder')}
-        value={participantName}
-        onChange={(e) => onNameChange(e.target.value)}
-        margin="normal"
-        autoFocus
-        InputProps={{
-          startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />,
-        }}
-        inputProps={{ 'data-testid': 'input-participant-name' }}
-      />
-
-      <TextField
-        fullWidth
-        required
-        type="email"
-        label={t('booking.participantEmail')}
-        placeholder={t('booking.participantEmailPlaceholder')}
-        value={participantEmail}
-        onChange={(e) => onEmailChange(e.target.value)}
-        margin="normal"
-        InputProps={{
-          startAdornment: <MailOutlineIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />,
-        }}
-        inputProps={{ 'data-testid': 'input-participant-email' }}
-      />
-
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button
-          onClick={onCancel}
-          variant="outlined"
+      {/* Booking Form Fields */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <TextField
+          required
+          fullWidth
+          size="small"
+          label={t('booking.participantName')}
+          placeholder={t('booking.participantNamePlaceholder')}
+          value={participantName}
+          onChange={(e) => onNameChange(e.target.value)}
           disabled={loading}
-          sx={{
-            borderRadius: '8px',
-            borderColor: 'divider',
-            color: 'text.primary',
-            '&:hover': { borderColor: 'text.secondary', bgcolor: 'action.hover' },
+          InputProps={{
+            startAdornment: <PersonOutlineIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
           }}
-        >
-          {t('common.cancel')}
-        </Button>
-        <Button
-          type="submit"
-          variant="contained"
+          inputProps={{
+            'data-testid': 'input-participant-name',
+          }}
+        />
+
+        <TextField
+          required
+          fullWidth
+          size="small"
+          type="email"
+          label={t('booking.participantEmail')}
+          placeholder={t('booking.participantEmailPlaceholder')}
+          value={participantEmail}
+          onChange={(e) => onEmailChange(e.target.value)}
           disabled={loading}
-          data-testid="submit-booking-button"
-          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
-          sx={{
-            px: 2.5,
-            py: 1,
-            borderRadius: '8px',
-            bgcolor: isSoldOut ? 'error.main' : 'primary.main',
-            color: isSoldOut ? 'error.contrastText' : 'primary.contrastText',
-            '&:hover': {
-              bgcolor: isSoldOut ? 'error.dark' : 'primary.light',
-            },
+          InputProps={{
+            startAdornment: <MailOutlineIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
           }}
-        >
-          {loading ? t('booking.processing') : isSoldOut ? t('booking.attemptRegistration') : t('booking.confirmButton')}
-        </Button>
+          inputProps={{
+            'data-testid': 'input-participant-email',
+          }}
+        />
+
+        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', mt: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={onCancel}
+            disabled={loading}
+            sx={{
+              borderColor: 'divider',
+              color: 'text.primary',
+              fontWeight: 600,
+              borderRadius: '8px',
+              '&:hover': {
+                borderColor: 'text.secondary',
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            {t('common.cancel')}
+          </Button>
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            data-testid="submit-booking-button"
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{
+              fontWeight: 600,
+              borderRadius: '8px',
+              px: 3,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': {
+                bgcolor: 'primary.light',
+              },
+            }}
+          >
+            {loading ? t('booking.processing') : isSoldOut ? t('booking.attemptRegistration') : t('booking.confirmButton')}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

@@ -9,6 +9,7 @@ import { OrganizerEventDialog } from '@/features/events/components/OrganizerEven
 import { EditEventDialog } from '@/features/events/components/EditEventDialog';
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
 import { I18nProvider, useTranslation } from '@/shared/context/I18nContext';
+import { getLocalizedEventTitle } from '@/shared/utils/eventLocalization';
 import { AuthDialog } from '@/features/auth/components/AuthDialog';
 import { AuthUser } from '@/features/auth/types';
 import { Event } from '@/features/events/types';
@@ -20,7 +21,7 @@ import { TicketsPage } from '@/pages/TicketsPage';
 
 function AppShell() {
   const { user, logout } = useAuth();
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const {
     events,
     allEvents,
@@ -91,9 +92,10 @@ function AppShell() {
 
   const handleEventUpdated = (updated: Event) => {
     refreshEvents();
+    const localizedTitle = getLocalizedEventTitle(updated, locale);
     setNotification({
       open: true,
-      message: `Event "${updated.title}" successfully updated.`,
+      message: t('organizer.eventUpdatedSuccess', { title: localizedTitle }),
       severity: 'success',
     });
   };
@@ -109,7 +111,7 @@ function AppShell() {
     const cleanParticipantName = ticket.participantName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim();
     setNotification({
       open: true,
-      message: `Success! Ticket ${ticket.ticketCode} reserved for ${cleanParticipantName}.`,
+      message: t('booking.ticketReservedSuccess', { code: ticket.ticketCode, name: cleanParticipantName }),
       severity: 'success',
     });
   };
@@ -123,7 +125,7 @@ function AppShell() {
     }
     setNotification({
       open: true,
-      message: `Reservation ${ticket.ticketCode} cancelled. Seat capacity has been released.`,
+      message: t('tickets.reservationCancelledSuccess', { code: ticket.ticketCode }),
       severity: 'info',
     });
   };
@@ -139,9 +141,10 @@ function AppShell() {
 
   const handleAuthSuccess = (authenticatedUser: AuthUser) => {
     const cleanName = authenticatedUser.fullName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim();
+    const roleLabel = authenticatedUser.role === 'ORGANIZER' ? t('auth.organizer') : t('auth.participant');
     setNotification({
       open: true,
-      message: `Signed in as ${cleanName} (${authenticatedUser.role}).`,
+      message: t('auth.signedInAs', { name: cleanName, role: roleLabel }),
       severity: 'success',
     });
   };
@@ -151,7 +154,7 @@ function AppShell() {
     setTotalTickets(0);
     setNotification({
       open: true,
-      message: 'Signed out successfully.',
+      message: t('auth.signedOutSuccess'),
       severity: 'info',
     });
   };

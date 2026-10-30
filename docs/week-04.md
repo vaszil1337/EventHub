@@ -33,9 +33,22 @@ A 4. hét célja a tantárgyi követelménytáblázatban rögzített összes **E
    - **Mailpit Fejlesztői SMTP Környezet**: A `docker-compose.yml`-ben futó `axllent/mailpit` konténer fogadja a leveleket (SMTP port: `1025`), és azonnali böngészős előnézetet biztosít a `http://localhost:8025` webes felületen.
    - **Formázott HTML és Szöveges E-mail**: A levél tartalmazza a rendezvény részleteit (cím, időpont, helyszín), a jegytípust, a kifizetett árat, valamint kiemelt kártyán a belépéshez szükséges egyedi belépőkódot (`EVT-YYYY-XXXX`).
    - **Reziliens hibakezelés**: Ha a külső e-mail szolgáltató hibát dob (`EmailDeliveryException` – pl. szolgáltatói kiesés vagy `@fail-email.test` tesztcím esetén), a `BookTicketService` elkapja a kivételt, a jegyet `FAILED_PENDING_RETRY` e-mail státusszal menti el, így a tranzakció és a jegyfoglalás nem vész el.
+6. **Teljeskörű Kétnyelvűsítés & i18n Architektúra (Bilingual Event Support & Localization)**:
+   - **Kétnyelvű Adatmodell & Flyway V4 Migráció**:
+     - Az `Event` entitás és a PostgreSQL `events` tábla kiegészült a `title_hu` és `description_hu` oszlopokkal (`V4__add_bilingual_event_fields.sql`).
+     - A `CreateEventCommand`, `UpdateEventCommand`, `CreateEventRequest` és `UpdateEventRequest` DTO-k mindkét nyelvi változatot kötelezően bekérik és validálják a szervezőtől.
+   - **Lokalizált E-mail Értesítések (`Accept-Language` / Locale)**:
+     - A jegyfoglalási kérés (`BookingRequest`) továbbítja a kliens által választott nyelvet (`locale: 'en' | 'hu'`).
+     - Az `EmailNotificationPort` és `SmtpEmailNotificationAdapter` ezen locale alapján állítja elő a megfelelő nyelvű HTML és szöveges levelet (magyar: *"Jegyfoglalás megerősítése"*, angol: *"Ticket Confirmation"*).
+   - **Frontend i18n Rendszer (`I18nContext`, szótárak & LanguageSwitcher)**:
+     - Típusbiztos fordítási szótárak (`types.ts`, `en.ts`, `hu.ts`) a teljes alkalmazásra kiterjedően (navigáció, események, jegyfoglalás, szervezői felület, hibaüzenetek, snackbar értesítések).
+     - A navigációs sávban letisztult MUI `<Select size="small">` dropdown (`🌐 HU ▾` / `🌐 EN ▾`) teszi lehetővé az azonnali nyelvváltást.
+   - **Deklaratív Jegytípus-feloldás (`eventLocalization.ts`)**:
+     - Az ad-hoc `if-else` láncok helyett deklaratív, szótár- és lookup-tábla alapú megoldás (`TIER_KEY_MAP`, `DESCRIPTION_MATCHERS`, és $O(1)$ `INITIAL_EVENTS_MAP` fallback).
+     - A starter jegyek nevei (*Early Bird belépő*, *Standard belépő*, *VIP belépő*) és dinamikus árazási magyarázatai a kiválasztott nyelv szerint jelennek meg.
 
 ---
 
 ## 2. Tesztelési Eredmények
-- **Backend (`mvn test`)**: 48/48 teszt sikeres (beleértve a dinamikus surge árazást, esemény módosítást, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, a Mailpit/JavaMailSender HTML levélküldést és a hibatűrő fallbacket).
-- **Frontend (`npm run test:run` & `npm run build`)**: 28/28 Vitest teszt sikeres, TypeScript/Vite produkciós build hibátlan, perzisztens auth-kezeléssel és központi MUI `theme.ts` tokenekkel.
+- **Backend (`mvn test`)**: 49/49 teszt sikeres (beleértve a dinamikus surge árazást, esemény módosítást, a kétnyelvű cím/leírás mentést és validációt, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, a Mailpit/JavaMailSender HTML levélküldést magyar és angol nyelven, valamint a hibatűrő fallbacket).
+- **Frontend (`npm run test:run` & `npm run build`)**: 57/57 Vitest teszt sikeres 12 tesztfájlban (beleértve az `eventLocalization.test.ts` 15 tesztjét, az `I18nContext.test.tsx` és `LanguageSwitcher.test.tsx` teszteket), a TypeScript és Vite produkciós build 0 hibával lefordul.

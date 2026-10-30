@@ -1,11 +1,11 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { I18nProvider } from '../context/I18nContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 describe('LanguageSwitcher', () => {
-  it('renders language switcher with default active EN button', () => {
+  it('renders language switcher with default active EN selection', () => {
     render(
       <I18nProvider>
         <LanguageSwitcher />
@@ -14,15 +14,10 @@ describe('LanguageSwitcher', () => {
 
     const switcher = screen.getByTestId('language-switcher');
     expect(switcher).toBeInTheDocument();
-
-    const enBtn = screen.getByTestId('language-btn-en');
-    const huBtn = screen.getByTestId('language-btn-hu');
-
-    expect(enBtn).toHaveAttribute('aria-pressed', 'true');
-    expect(huBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('EN')).toBeInTheDocument();
   });
 
-  it('switches to HU when Hungarian button is clicked', async () => {
+  it('switches to HU when Hungarian option is selected from dropdown', async () => {
     const user = userEvent.setup();
 
     render(
@@ -31,14 +26,12 @@ describe('LanguageSwitcher', () => {
       </I18nProvider>
     );
 
-    const huBtn = screen.getByTestId('language-btn-hu');
-    const enBtn = screen.getByTestId('language-btn-en');
+    const selectTrigger = screen.getByRole('combobox');
+    await user.click(selectTrigger);
 
-    await act(async () => {
-      await user.click(huBtn);
-    });
+    const huOption = await screen.findByTestId('language-btn-hu');
+    await user.click(huOption);
 
-    expect(huBtn).toHaveAttribute('aria-pressed', 'true');
-    expect(enBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('HU')).toBeInTheDocument();
   });
 });
