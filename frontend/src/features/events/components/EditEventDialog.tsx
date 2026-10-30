@@ -16,6 +16,7 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Event } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface EditEventDialogProps {
   open: boolean;
@@ -30,11 +31,14 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
   onClose,
   onEventUpdated,
 }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState<string>('');
+  const [titleHu, setTitleHu] = useState<string>('');
   const [description, setDescription] = useState<string>('');
+  const [descriptionHu, setDescriptionHu] = useState<string>('');
   const [date, setDate] = useState<string>('');
   const [venueName, setVenueName] = useState<string>('');
   const [venueAddress, setVenueAddress] = useState<string>('');
@@ -46,7 +50,9 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
   useEffect(() => {
     if (event) {
       setTitle(event.title);
+      setTitleHu(event.titleHu || event.title);
       setDescription(event.description);
+      setDescriptionHu(event.descriptionHu || event.description);
       setDate(event.date);
       setVenueName(event.venue.name);
       setVenueAddress(event.venue.address);
@@ -62,8 +68,18 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
     e.preventDefault();
     if (!event) return;
 
+    if (!title.trim() || !titleHu.trim()) {
+      setError(t('organizer.bothTitlesRequired'));
+      return;
+    }
+
+    if (!description.trim() || !descriptionHu.trim()) {
+      setError(t('organizer.bothDescriptionsRequired'));
+      return;
+    }
+
     if (venueCapacity < event.soldTicketsCount) {
-      setError(`Venue capacity cannot be less than already reserved seats (${event.soldTicketsCount}).`);
+      setError(t('organizer.capacityLessThanSold', { count: event.soldTicketsCount }));
       return;
     }
 
@@ -72,7 +88,9 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
       setError(null);
       const updated = await eventService.updateEvent(event.id, {
         title,
+        titleHu,
         description,
+        descriptionHu,
         date,
         venueName,
         venueAddress,
@@ -108,8 +126,8 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
           bgcolor: 'background.paper',
           p: { xs: 1.5, sm: 2.5 },
           boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
-          minHeight: 630,
-          maxHeight: 630,
+          minHeight: 670,
+          maxHeight: 670,
           display: 'flex',
           flexDirection: 'column',
         },
@@ -144,10 +162,10 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              Edit Event
+              {t('organizer.editDialogTitle')}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Update event details, venue information, and base pricing
+              {t('organizer.editDialogSubtitle')}
             </Typography>
           </Box>
         </Box>
@@ -175,37 +193,63 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 1.75, flex: 1, pt: 0.5 }}>
-          <TextField
-            required
-            label="Event Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            size="small"
-            fullWidth
-          />
-
-          <TextField
-            required
-            label="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            rows={2}
-            size="small"
-            fullWidth
-          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <TextField
+              required
+              label={t('organizer.eventTitleEn')}
+              placeholder="e.g. Cloud Native Summit Budapest"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              size="small"
+              fullWidth
+            />
+            <TextField
+              required
+              label={t('organizer.eventTitleHu')}
+              placeholder="pl. Cloud Native Csúcstalálkozó Budapest"
+              value={titleHu}
+              onChange={(e) => setTitleHu(e.target.value)}
+              size="small"
+              fullWidth
+            />
+          </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <TextField
               required
-              label="Category"
+              label={t('organizer.descriptionEn')}
+              placeholder="Describe the agenda, speakers, and experience..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              multiline
+              rows={2}
+              size="small"
+              fullWidth
+            />
+            <TextField
+              required
+              label={t('organizer.descriptionHu')}
+              placeholder="Ismertesd a programot, előadókat magyarul..."
+              value={descriptionHu}
+              onChange={(e) => setDescriptionHu(e.target.value)}
+              multiline
+              rows={2}
+              size="small"
+              fullWidth
+            />
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+            <TextField
+              required
+              label={t('organizer.category')}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               size="small"
             />
             <TextField
               required
-              label="ISO Date (UTC)"
+              label={t('organizer.dateIso')}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               size="small"
@@ -215,14 +259,14 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <TextField
               required
-              label="Venue Name"
+              label={t('organizer.venueName')}
               value={venueName}
               onChange={(e) => setVenueName(e.target.value)}
               size="small"
             />
             <TextField
               required
-              label="Venue Address"
+              label={t('organizer.venueAddress')}
               value={venueAddress}
               onChange={(e) => setVenueAddress(e.target.value)}
               size="small"
@@ -233,16 +277,16 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
             <TextField
               required
               type="number"
-              label="Venue Capacity (Max Seats)"
+              label={t('organizer.venueCapacity')}
               value={venueCapacity}
               onChange={(e) => setVenueCapacity(Number(e.target.value))}
-              helperText={`Bookings: ${event.soldTicketsCount} / ${event.venue.capacity}`}
+              helperText={`${t('events.seatsTaken', { capacity: event.venue.capacity })}: ${event.soldTicketsCount} / ${event.venue.capacity}`}
               size="small"
             />
             <TextField
               required
               type="number"
-              label="Base Ticket Price"
+              label={t('organizer.basePrice')}
               value={basePriceAmount}
               onChange={(e) => setBasePriceAmount(Number(e.target.value))}
               size="small"
@@ -250,7 +294,7 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
           </Box>
 
           <TextField
-            label="Cover Image URL (Optional)"
+            label={t('organizer.imageUrl')}
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             size="small"
@@ -259,7 +303,7 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 'auto', pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
             <Button onClick={onClose} variant="outlined" sx={{ borderColor: 'divider', color: 'text.primary' }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
@@ -267,7 +311,7 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             >
-              Save Changes
+              {t('organizer.saveChanges')}
             </Button>
           </Box>
         </Box>

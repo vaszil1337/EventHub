@@ -16,6 +16,7 @@ import { useTicketBooking } from '@/features/ticket-booking/hooks/useTicketBooki
 import { AuthUser } from '@/features/auth/types';
 import { BookingForm } from './BookingForm';
 import { BookingSuccess } from './BookingSuccess';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface BookingDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
   onClose,
   onBookingSuccess,
 }) => {
+  const { t } = useTranslation();
   const {
     participantName,
     setParticipantName,
@@ -120,7 +122,7 @@ export const BookingDialog: React.FC<BookingDialogProps> = ({
             <ConfirmationNumberOutlinedIcon sx={{ fontSize: 18 }} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}>
-            {bookedTicket ? 'Ticket Issued' : 'Book Event Ticket'}
+            {bookedTicket ? t('booking.ticketIssued') : t('booking.title')}
           </Typography>
         </Box>
         <IconButton

@@ -14,6 +14,7 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import { Event, TicketType } from '@/features/events/types';
 import { formatMoney } from '@/shared/utils/formatters';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface BookingFormProps {
   event: Event;
@@ -63,10 +64,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const { locale, t } = useTranslation();
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
   const tiers = event.ticketTypes || [];
   const activeTier = tiers.find((t) => t.id === selectedTicketTypeId) || tiers[0];
   const displayPrice = activeTier ? activeTier.effectivePrice : event.price;
+  const displayTitle = locale === 'hu' && event.titleHu ? event.titleHu : event.title;
 
   return (
     <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
@@ -82,7 +85,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         }}
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
-          {event.title}
+          {displayTitle}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary', mb: 1 }}>
           <PlaceOutlinedIcon sx={{ fontSize: '0.9rem' }} />
@@ -92,7 +95,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Price: {formatMoney(displayPrice)}
+            {t('events.price')}: {formatMoney(displayPrice)}
           </Typography>
           <Typography
             variant="body2"
@@ -102,7 +105,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               color: isSoldOut ? 'error.main' : 'text.secondary',
             }}
           >
-            Capacity: {event.soldTicketsCount} / {event.venue.capacity} seats taken
+            {t('events.capacity')}: {event.soldTicketsCount}{t('events.seatsTaken', { capacity: event.venue.capacity })}
           </Typography>
         </Box>
       </Box>
@@ -121,7 +124,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                 letterSpacing: '0.04em',
               }}
             >
-              Select Ticket Tier (Dynamic Pricing)
+              {t('booking.selectTierTitle')}
             </Typography>
           </Box>
 
@@ -189,7 +192,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       </Box>
                     </Box>
                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
-                      {tier.description} • {tier.quota - tier.soldCount} / {tier.quota} left
+                      {tier.description} • {t('booking.leftBadge', { count: tier.quota - tier.soldCount, quota: tier.quota })}
                     </Typography>
                   </Box>
 
@@ -208,7 +211,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       </Typography>
                     )}
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                      {tierSoldOut ? 'Sold Out' : formatMoney(tier.effectivePrice)}
+                      {tierSoldOut ? t('events.soldOut') : formatMoney(tier.effectivePrice)}
                     </Typography>
                   </Box>
                 </Box>
@@ -234,7 +237,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           }}
           data-testid="capacity-warning-alert"
         >
-          <strong>Capacity Limit Notice:</strong> This event has reached maximum capacity ({event.soldTicketsCount}/{event.venue.capacity} seats). Attempting registration will trigger the capacity constraint rule.
+          <strong>{t('booking.capacityNoticeTitle')}</strong>{' '}
+          {t('booking.capacityNoticeText', { sold: event.soldTicketsCount, capacity: event.venue.capacity })}
         </Alert>
       )}
 
@@ -260,8 +264,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       <TextField
         fullWidth
         required
-        label="Participant Name"
-        placeholder="e.g. Jane Doe"
+        label={t('booking.participantName')}
+        placeholder={t('booking.participantNamePlaceholder')}
         value={participantName}
         onChange={(e) => onNameChange(e.target.value)}
         margin="normal"
@@ -276,8 +280,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         fullWidth
         required
         type="email"
-        label="Email Address"
-        placeholder="e.g. jane.doe@example.com (use @fail-email.test to test SMTP retry)"
+        label={t('booking.participantEmail')}
+        placeholder={t('booking.participantEmailPlaceholder')}
         value={participantEmail}
         onChange={(e) => onEmailChange(e.target.value)}
         margin="normal"
@@ -299,7 +303,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             '&:hover': { borderColor: 'text.secondary', bgcolor: 'action.hover' },
           }}
         >
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
@@ -318,7 +322,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             },
           }}
         >
-          {loading ? 'Processing...' : isSoldOut ? 'Attempt Registration (Check Capacity)' : 'Confirm & Reserve'}
+          {loading ? t('booking.processing') : isSoldOut ? t('booking.attemptRegistration') : t('booking.confirmButton')}
         </Button>
       </Box>
     </Box>

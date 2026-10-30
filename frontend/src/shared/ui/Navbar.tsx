@@ -20,6 +20,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
 import { AuthUser } from '@/features/auth/types';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface NavbarProps {
   totalTicketsCount?: number;
@@ -36,6 +37,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onOpenOrganizerDialog,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <AppBar
       position="sticky"
@@ -99,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   fontWeight: 500,
                 }}
               >
-                Event & Ticket Management
+                {t('nav.brandSubtitle')}
               </Typography>
             </Box>
           </Box>
@@ -129,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 },
               }}
             >
-              Events
+              {t('nav.events')}
             </Button>
 
             <Button
@@ -160,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 },
               }}
             >
-              {user?.role === 'ORGANIZER' ? 'Reservations' : 'My Tickets'}
+              {user?.role === 'ORGANIZER' ? t('nav.reservations') : t('nav.myTickets')}
               {totalTicketsCount > 0 && (
                 <Chip
                   label={totalTicketsCount}
@@ -194,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   fontWeight: 600,
                 }}
               >
-                Manage Events
+                {t('nav.manageEvents')}
               </Button>
             )}
 
@@ -229,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {user.fullName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim()}
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600 }}>
-                    {user.role}
+                    {user.role === 'ORGANIZER' ? t('auth.organizer') : t('auth.participant')}
                   </Typography>
                 </Box>
                 {onLogout && (
@@ -248,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       '&:hover': { bgcolor: 'background.paper', color: 'error.main' },
                     }}
                   >
-                    Sign Out
+                    {t('nav.signOut')}
                   </Button>
                 )}
               </Box>
@@ -275,7 +278,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     },
                   }}
                 >
-                  Sign In
+                  {t('nav.signIn')}
                 </Button>
               )
             )}

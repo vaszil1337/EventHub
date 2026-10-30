@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface CapacityBadgeProps {
   soldCount: number;
@@ -7,11 +8,16 @@ interface CapacityBadgeProps {
 }
 
 export const CapacityBadge: React.FC<CapacityBadgeProps> = ({ soldCount, capacity }) => {
+  const { t } = useTranslation();
   const percentage = Math.min(100, Math.round((soldCount / Math.max(1, capacity)) * 100));
   const isSoldOut = soldCount >= capacity;
   const isHighDemand = !isSoldOut && percentage >= 80;
 
-  const statusText = isSoldOut ? 'Sold Out' : isHighDemand ? `${capacity - soldCount} left` : 'Available';
+  const statusText = isSoldOut
+    ? t('events.soldOut')
+    : isHighDemand
+      ? t('events.seatsLeft', { count: capacity - soldCount })
+      : t('events.available');
   const dotColor = isSoldOut ? 'error.main' : isHighDemand ? 'warning.main' : 'success.main';
   const barColor = isSoldOut ? 'error.main' : isHighDemand ? 'warning.main' : 'primary.main';
   const pillBg = isSoldOut ? 'error.light' : isHighDemand ? 'warning.light' : 'action.hover';
@@ -36,7 +42,7 @@ export const CapacityBadge: React.FC<CapacityBadgeProps> = ({ soldCount, capacit
           >
             {soldCount}
           </Box>
-          {` / ${capacity} seats taken`}
+          {t('events.seatsTaken', { capacity })}
         </Typography>
 
         {/* Minimal status pill with dot indicator */}

@@ -15,7 +15,9 @@ import java.util.Optional;
 public class Event {
     private final EventId id;
     private final String title;
+    private final String titleHu;
     private final String description;
+    private final String descriptionHu;
     private final Instant date;
     private final Venue venue;
     private int soldTicketsCount;
@@ -35,7 +37,7 @@ public class Event {
             String category,
             String imageUrl
     ) {
-        this(id, title, description, date, venue, soldTicketsCount, price, category, imageUrl, null);
+        this(id, title, title, description, description, date, venue, soldTicketsCount, price, category, imageUrl, null);
     }
 
     public Event(
@@ -50,9 +52,28 @@ public class Event {
             String imageUrl,
             List<TicketType> ticketTypes
     ) {
+        this(id, title, title, description, description, date, venue, soldTicketsCount, price, category, imageUrl, ticketTypes);
+    }
+
+    public Event(
+            EventId id,
+            String title,
+            String titleHu,
+            String description,
+            String descriptionHu,
+            Instant date,
+            Venue venue,
+            int soldTicketsCount,
+            Money price,
+            String category,
+            String imageUrl,
+            List<TicketType> ticketTypes
+    ) {
         this.id = Objects.requireNonNull(id, "Event id cannot be null");
         this.title = Objects.requireNonNull(title, "Event title cannot be null");
+        this.titleHu = (titleHu != null && !titleHu.isBlank()) ? titleHu : title;
         this.description = Objects.requireNonNull(description, "Event description cannot be null");
+        this.descriptionHu = (descriptionHu != null && !descriptionHu.isBlank()) ? descriptionHu : description;
         this.date = Objects.requireNonNull(date, "Event date cannot be null");
         this.venue = Objects.requireNonNull(venue, "Venue cannot be null");
         if (soldTicketsCount < 0) {
@@ -146,7 +167,9 @@ public class Event {
         return new Event(
                 snapshot.id(),
                 snapshot.title(),
+                snapshot.titleHu(),
                 snapshot.description(),
+                snapshot.descriptionHu(),
                 snapshot.date(),
                 snapshot.venue(),
                 snapshot.soldTicketsCount(),
@@ -161,7 +184,9 @@ public class Event {
         return new EventSnapshot(
                 id,
                 title,
+                titleHu,
                 description,
+                descriptionHu,
                 date,
                 venue,
                 soldTicketsCount,
@@ -287,7 +312,29 @@ public class Event {
         return title;
     }
 
+    public String getTitleHu() {
+        return titleHu;
+    }
+
+    public String getTitle(String locale) {
+        if ("hu".equalsIgnoreCase(locale) && titleHu != null && !titleHu.isBlank()) {
+            return titleHu;
+        }
+        return title;
+    }
+
     public String getDescription() {
+        return description;
+    }
+
+    public String getDescriptionHu() {
+        return descriptionHu;
+    }
+
+    public String getDescription(String locale) {
+        if ("hu".equalsIgnoreCase(locale) && descriptionHu != null && !descriptionHu.isBlank()) {
+            return descriptionHu;
+        }
         return description;
     }
 

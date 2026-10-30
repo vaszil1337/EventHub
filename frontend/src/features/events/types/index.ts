@@ -25,7 +25,9 @@ export interface Venue {
 export interface Event {
   id: string;
   title: string;
+  titleHu?: string;
   description: string;
+  descriptionHu?: string;
   date: string;
   venue: Venue;
   soldTicketsCount: number;
@@ -37,7 +39,9 @@ export interface Event {
 
 export interface CreateEventInput {
   title: string;
+  titleHu?: string;
   description: string;
+  descriptionHu?: string;
   date: string;
   venueName: string;
   venueAddress: string;

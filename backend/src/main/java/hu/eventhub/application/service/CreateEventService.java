@@ -47,13 +47,16 @@ public class CreateEventService implements CreateEventUseCase {
         Event event = new Event(
                 eventId,
                 command.title().trim(),
+                command.titleHu() != null ? command.titleHu().trim() : command.title().trim(),
                 command.description() != null ? command.description().trim() : "",
+                command.descriptionHu() != null ? command.descriptionHu().trim() : (command.description() != null ? command.description().trim() : ""),
                 eventDate,
                 venue,
                 0,
                 basePrice,
                 category,
-                imageUrl
+                imageUrl,
+                null
         );
 
         return eventRepository.save(event);

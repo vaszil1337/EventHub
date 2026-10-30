@@ -33,7 +33,9 @@ class CreateEventServiceTest {
         CreateEventService service = new CreateEventService(eventRepository);
         CreateEventCommand command = new CreateEventCommand(
                 "Cloud Native Summit",
+                "Cloud Native Csúcstalálkozó",
                 "Great tech conference",
+                "Kiváló technológiai konferencia",
                 Instant.parse("2026-11-20T09:00:00Z"),
                 "Millenáris Hall",
                 "Budapest",
@@ -48,6 +50,10 @@ class CreateEventServiceTest {
 
         assertNotNull(created);
         assertEquals("Cloud Native Summit", created.getTitle());
+        assertEquals("Cloud Native Csúcstalálkozó", created.getTitleHu());
+        assertEquals("Cloud Native Csúcstalálkozó", created.getTitle("hu"));
+        assertEquals("Cloud Native Summit", created.getTitle("en"));
+        assertEquals("Kiváló technológiai konferencia", created.getDescription("hu"));
         assertEquals(200, created.getVenue().capacity());
         assertEquals(3, created.getTicketTypes().size());
         assertEquals(0, created.getSoldTicketsCount());

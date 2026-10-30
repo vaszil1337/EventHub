@@ -4,8 +4,11 @@ export const INITIAL_EVENTS: Event[] = [
   {
     id: 'evt-tech-summit-2026',
     title: 'Tech Horizons Summit 2026',
+    titleHu: 'Tech Horizontok Csúcstalálkozó 2026',
     description:
       'Join leading engineers, product innovators, and researchers for keynotes on cutting-edge cloud architectures, TypeScript, and modern web platforms.',
+    descriptionHu:
+      'Csatlakozz vezető mérnökökhöz és kutatókhoz: előadások modern felhőarchitektúrákról, TypeScriptről és webes technológiákról.',
     date: '2026-10-18T09:00:00.000Z',
     venue: {
       id: 'venue-grand-hall',
@@ -24,8 +27,11 @@ export const INITIAL_EVENTS: Event[] = [
   {
     id: 'evt-jazz-night-2026',
     title: 'Smooth Jazz & Soul Evening',
+    titleHu: 'Lágy Jazz és Soul Est',
     description:
       'An intimate acoustic evening featuring world-class jazz musicians and soul vocalists in an acoustic-tuned venue.',
+    descriptionHu:
+      'Meghitt akusztikus est világszínvonalú jazz- és soul-előadókkal egy különleges hangulatú klubban.',
     date: '2026-11-05T19:30:00.000Z',
     venue: {
       id: 'venue-blue-note',
@@ -44,8 +50,11 @@ export const INITIAL_EVENTS: Event[] = [
   {
     id: 'evt-ai-masterclass-2026',
     title: 'Executive AI & Deep Learning Masterclass',
+    titleHu: 'Vezetői MI és Deep Learning Mesterkurzus',
     description:
       'Intensive hands-on masterclass on neural architecture design, reasoning models, and enterprise deployment strategies.',
+    descriptionHu:
+      'Gyakorlati mesterkurzus neuronháló-tervezésről, neurális modellekről és vállalati implementációs stratégiákról.',
     date: '2026-11-20T10:00:00.000Z',
     venue: {
       id: 'venue-silicon-hub',

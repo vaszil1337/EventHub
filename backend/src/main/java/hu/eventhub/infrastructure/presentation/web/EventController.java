@@ -109,7 +109,9 @@ public class EventController {
                 : Instant.now();
         CreateEventCommand command = new CreateEventCommand(
                 request.title(),
+                request.titleHu() != null && !request.titleHu().isBlank() ? request.titleHu() : request.title(),
                 request.description(),
+                request.descriptionHu() != null && !request.descriptionHu().isBlank() ? request.descriptionHu() : request.description(),
                 parsedDate,
                 request.venueName(),
                 request.venueAddress(),
@@ -163,7 +165,9 @@ public class EventController {
         UpdateEventCommand command = new UpdateEventCommand(
                 id,
                 request.title(),
+                request.titleHu() != null && !request.titleHu().isBlank() ? request.titleHu() : request.title(),
                 request.description(),
+                request.descriptionHu() != null && !request.descriptionHu().isBlank() ? request.descriptionHu() : request.description(),
                 parsedDate,
                 request.venueName(),
                 request.venueAddress(),

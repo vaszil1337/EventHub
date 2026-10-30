@@ -19,8 +19,14 @@ public class EventJpaEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Column(name = "title_hu")
+    private String titleHu;
+
     @Column(name = "description", length = 2000)
     private String description;
+
+    @Column(name = "description_hu", length = 2000)
+    private String descriptionHu;
 
     @Column(name = "event_date", nullable = false)
     private Instant date;
@@ -57,7 +63,9 @@ public class EventJpaEntity {
     public EventJpaEntity(
             String id,
             String title,
+            String titleHu,
             String description,
+            String descriptionHu,
             Instant date,
             String venueId,
             String venueName,
@@ -71,7 +79,9 @@ public class EventJpaEntity {
     ) {
         this.id = id;
         this.title = title;
+        this.titleHu = titleHu;
         this.description = description;
+        this.descriptionHu = descriptionHu;
         this.date = date;
         this.venueId = venueId;
         this.venueName = venueName;
@@ -84,14 +94,38 @@ public class EventJpaEntity {
         this.imageUrl = imageUrl;
     }
 
+    public EventJpaEntity(
+            String id,
+            String title,
+            String description,
+            Instant date,
+            String venueId,
+            String venueName,
+            String venueAddress,
+            int venueCapacity,
+            int soldTicketsCount,
+            BigDecimal priceAmount,
+            String priceCurrency,
+            String category,
+            String imageUrl
+    ) {
+        this(id, title, title, description, description, date, venueId, venueName, venueAddress, venueCapacity, soldTicketsCount, priceAmount, priceCurrency, category, imageUrl);
+    }
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
+    public String getTitleHu() { return titleHu; }
+    public void setTitleHu(String titleHu) { this.titleHu = titleHu; }
+
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getDescriptionHu() { return descriptionHu; }
+    public void setDescriptionHu(String descriptionHu) { this.descriptionHu = descriptionHu; }
 
     public Instant getDate() { return date; }
     public void setDate(Instant date) { this.date = date; }

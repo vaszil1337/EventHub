@@ -19,6 +19,8 @@ import { Event } from '@/features/events/types';
 import { CapacityBadge } from './CapacityBadge';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useTranslation } from '@/shared/context/I18nContext';
+import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
 
 interface EventCardProps {
   event: Event;
@@ -28,8 +30,11 @@ interface EventCardProps {
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEditEvent }) => {
   const { user } = useAuth();
+  const { locale, t } = useTranslation();
   const isOrganizer = user?.role === 'ORGANIZER';
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
+  const displayTitle = getLocalizedEventTitle(event, locale);
+  const displayDescription = getLocalizedEventDescription(event, locale);
 
   return (
     <Card
@@ -58,7 +63,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
           <CardMedia
             component="img"
             image={event.imageUrl}
-            alt={event.title}
+            alt={displayTitle}
             sx={{
               height: '100%',
               width: '100%',
@@ -89,7 +94,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
                 letterSpacing: '0.04em',
               }}
             >
-              {event.category}
+              {t(`categories.${event.category.toLowerCase()}`) || event.category}
             </Box>
           )}
         </Box>
@@ -108,7 +113,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
               color: 'text.secondary',
             }}
           >
-            {formatEventDate(event.date)}
+            {formatEventDate(event.date, locale)}
           </Typography>
         </Box>
 
@@ -130,7 +135,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
             },
           }}
         >
-          {event.title}
+          {displayTitle}
         </Typography>
 
         {/* Venue */}
@@ -169,7 +174,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
             mb: 2,
           }}
         >
-          {event.description}
+          {displayDescription}
         </Typography>
 
         {/* Price & Capacity Meter */}
@@ -183,7 +188,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1.25 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Price per seat
+              {t('events.pricePerSeat')}
             </Typography>
             <Typography
               variant="subtitle1"
@@ -193,7 +198,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              {formatMoney(event.price)}
+              {formatMoney(event.price, locale)}
             </Typography>
           </Box>
 
@@ -224,7 +229,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
             },
           }}
         >
-          Details
+          {t('events.viewDetails')}
         </Button>
 
         {isOrganizer ? (
@@ -246,7 +251,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
               },
             }}
           >
-            Edit Event
+            {t('events.editEvent')}
           </Button>
         ) : (
           <Button
@@ -269,7 +274,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
               },
             }}
           >
-            {isSoldOut ? 'Sold Out (Capacity Limit)' : 'Book Ticket'}
+            {isSoldOut ? t('events.soldOutCapacityLimit') : t('events.bookTicket')}
           </Button>
         )}
       </CardActions>

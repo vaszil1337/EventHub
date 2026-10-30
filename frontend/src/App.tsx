@@ -8,7 +8,7 @@ import { BookingDialog } from '@/features/ticket-booking/components/BookingDialo
 import { OrganizerEventDialog } from '@/features/events/components/OrganizerEventDialog';
 import { EditEventDialog } from '@/features/events/components/EditEventDialog';
 import { AuthProvider, useAuth } from '@/features/auth/context/AuthContext';
-import { I18nProvider } from '@/shared/context/I18nContext';
+import { I18nProvider, useTranslation } from '@/shared/context/I18nContext';
 import { AuthDialog } from '@/features/auth/components/AuthDialog';
 import { AuthUser } from '@/features/auth/types';
 import { Event } from '@/features/events/types';
@@ -20,6 +20,7 @@ import { TicketsPage } from '@/pages/TicketsPage';
 
 function AppShell() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const {
     events,
     allEvents,
@@ -266,7 +267,7 @@ function AppShell() {
           }}
         >
           <Box sx={{ fontSize: '0.8125rem', color: 'text.secondary', fontWeight: 500 }}>
-            EventHub • Event & Ticket Management
+            EventHub • {t('nav.brandSubtitle')}
           </Box>
         </Box>
       </Box>

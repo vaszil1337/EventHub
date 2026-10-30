@@ -47,7 +47,9 @@ public class UpdateEventService implements UpdateEventUseCase {
         Event updated = new Event(
                 existing.getId(),
                 command.title().trim(),
+                command.titleHu() != null ? command.titleHu().trim() : command.title().trim(),
                 command.description() != null ? command.description().trim() : "",
+                command.descriptionHu() != null ? command.descriptionHu().trim() : (command.description() != null ? command.description().trim() : ""),
                 eventDate,
                 updatedVenue,
                 existing.getSoldTicketsCount(),

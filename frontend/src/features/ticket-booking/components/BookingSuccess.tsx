@@ -17,6 +17,7 @@ import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumb
 import { Ticket } from '@/features/ticket-booking/types';
 import { Event } from '@/features/events/types';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface BookingSuccessProps {
   ticket: Ticket;
@@ -25,6 +26,7 @@ interface BookingSuccessProps {
 }
 
 export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, onClose }) => {
+  const { locale, t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = () => {
@@ -34,6 +36,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
   };
 
   const emailFailed = ticket.emailStatus === 'FAILED_PENDING_RETRY';
+  const displayTitle = locale === 'hu' && event.titleHu ? event.titleHu : event.title;
 
   return (
     <Box sx={{ textAlign: 'center', py: 1 }} data-testid="booking-success-view">
@@ -64,10 +67,10 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
           mb: 0.5,
         }}
       >
-        Booking Confirmed!
+        {t('booking.bookingSuccessTitle')}
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-        Your seat has been reserved and your ticket pass has been generated.
+        {t('booking.bookingSuccessSubtitle')}
       </Typography>
 
       {emailFailed && (
@@ -84,7 +87,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
             fontSize: '0.8rem',
           }}
         >
-          <strong>External Email Gateway Notice:</strong> Confirmation email delivery encountered a temporary gateway error. Your ticket is valid and the email has been queued for automatic retry.
+          <strong>{t('booking.emailGatewayNoticeTitle')}</strong> {t('booking.emailGatewayNoticeText')}
         </Alert>
       )}
 
@@ -106,7 +109,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ConfirmationNumberOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Ticket Code {ticket.ticketTypeName ? `• ${ticket.ticketTypeName}` : ''}
+              {t('booking.ticketCode')} {ticket.ticketTypeName ? `• ${ticket.ticketTypeName}` : ''}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -124,7 +127,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
               }}
               data-testid="ticket-code-chip"
             />
-            <Tooltip title={copied ? 'Copied!' : 'Copy Code'}>
+            <Tooltip title={copied ? t('booking.codeCopied') : t('booking.copyCode')}>
               <IconButton size="small" onClick={handleCopyCode} sx={{ color: copied ? 'success.main' : 'text.secondary' }}>
                 {copied ? <CheckOutlinedIcon fontSize="small" /> : <ContentCopyOutlinedIcon fontSize="small" />}
               </IconButton>
@@ -137,7 +140,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Attendee
+              {t('booking.attendee')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
               {ticket.participantName.replace(/\s*\((Organizer|Participant|Szervező|Résztvevő)\)/gi, '').trim()}
@@ -149,7 +152,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
 
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Amount Paid
+              {t('booking.amountPaid')}
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {formatMoney(ticket.price)}
@@ -164,10 +167,10 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
 
         <Box>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-            Event & Venue
+            {t('booking.eventAndVenue')}
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {event.title}
+            {displayTitle}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {formatEventDate(event.date)} • {event.venue.name}
@@ -188,7 +191,7 @@ export const BookingSuccess: React.FC<BookingSuccessProps> = ({ ticket, event, o
           '&:hover': { bgcolor: 'primary.light' },
         }}
       >
-        Done
+        {t('booking.done')}
       </Button>
     </Box>
   );

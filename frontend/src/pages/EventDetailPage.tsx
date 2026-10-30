@@ -21,6 +21,8 @@ import { eventService } from '@/features/events/services/eventService';
 import { CapacityBadge } from '@/features/events/components/CapacityBadge';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useTranslation } from '@/shared/context/I18nContext';
+import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
 
 interface EventDetailPageProps {
   onBookTicket: (event: Event) => void;
@@ -29,11 +31,15 @@ interface EventDetailPageProps {
 
 export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, onEditEvent }) => {
   const { user } = useAuth();
+  const { locale, t } = useTranslation();
   const isOrganizer = user?.role === 'ORGANIZER';
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const displayTitle = event ? getLocalizedEventTitle(event, locale) : '';
+  const displayDescription = event ? getLocalizedEventDescription(event, locale) : '';
 
   useEffect(() => {
     async function loadEvent() {
@@ -85,7 +91,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
           startIcon={<ArrowBackOutlinedIcon />}
           sx={{ color: 'text.primary', fontWeight: 600 }}
         >
-          Back to Events
+          {t('events.backToEvents')}
         </Button>
       </Container>
     );
@@ -109,7 +115,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
           '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
         }}
       >
-        Back to Events
+        {t('events.backToEvents')}
       </Button>
 
       {/* Main Card */}
@@ -127,7 +133,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
           <Box
             component="img"
             src={event.imageUrl}
-            alt={event.title}
+            alt={displayTitle}
             sx={{
               width: '100%',
               height: { xs: 220, md: 380 },
@@ -153,14 +159,14 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
                   letterSpacing: '0.04em',
                 }}
               >
-                {event.category}
+                {t(`categories.${event.category.toLowerCase()}`) || event.category}
               </Box>
             )}
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
               <CalendarTodayOutlinedIcon sx={{ fontSize: '0.9rem' }} />
               <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                {formatEventDate(event.date)}
+                {formatEventDate(event.date, locale)}
               </Typography>
             </Box>
           </Box>
@@ -177,7 +183,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
               lineHeight: 1.25,
             }}
           >
-            {event.title}
+            {displayTitle}
           </Typography>
 
           {/* Venue Card */}
@@ -207,7 +213,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
 
           {/* Description */}
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            About This Event
+            {t('events.aboutEvent')}
           </Typography>
           <Typography
             variant="body1"
@@ -218,7 +224,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
               fontSize: '0.95rem',
             }}
           >
-            {event.description}
+            {displayDescription}
           </Typography>
 
           <Divider sx={{ my: 4, borderColor: 'divider' }} />
@@ -240,10 +246,10 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
           >
             <Box sx={{ flexGrow: 1, maxWidth: { sm: 340 } }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', mb: 0.5 }}>
-                TICKET PRICE
+                {t('events.ticketPrice')}
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1.5, fontFeatureSettings: '"tnum"' }}>
-                {formatMoney(event.price)}
+                {formatMoney(event.price, locale)}
               </Typography>
               <CapacityBadge soldCount={event.soldTicketsCount} capacity={event.venue.capacity} />
             </Box>
@@ -267,15 +273,16 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
                   },
                 }}
               >
-                Edit Event
+                {t('events.editEvent')}
               </Button>
             ) : (
               <Button
                 variant="contained"
                 size="large"
-                startIcon={isSoldOut ? <BlockOutlinedIcon /> : <ConfirmationNumberOutlinedIcon />}
+                disabled={isSoldOut}
                 onClick={() => onBookTicket(event)}
-                data-testid="detail-book-ticket-button"
+                data-testid="detail-book-button"
+                startIcon={!isSoldOut ? <ConfirmationNumberOutlinedIcon /> : <BlockOutlinedIcon />}
                 sx={{
                   py: 1.5,
                   px: 4,
@@ -290,7 +297,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
                   },
                 }}
               >
-                {isSoldOut ? 'Sold Out (Capacity Reached)' : 'Book Ticket Now'}
+                {isSoldOut ? t('events.soldOutCapacityReached') : t('events.bookTicketNow')}
               </Button>
             )}
           </Box>

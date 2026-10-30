@@ -169,6 +169,7 @@ class EventControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is("evt-tech-summit-2026")))
                 .andExpect(jsonPath("$.title", is("Tech Horizons Summit 2026")))
+                .andExpect(jsonPath("$.titleHu", is("Tech Horizontok Csúcstalálkozó 2026")))
                 .andExpect(jsonPath("$.venue.capacity", is(100)));
     }
 

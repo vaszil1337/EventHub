@@ -34,7 +34,9 @@ public final class EventResponseMapper {
         return new EventResponse(
                 snapshot.id().value(),
                 snapshot.title(),
+                snapshot.titleHu(),
                 snapshot.description(),
+                snapshot.descriptionHu(),
                 snapshot.date().toString(),
                 new VenueResponse(
                         snapshot.venue().id().value(),

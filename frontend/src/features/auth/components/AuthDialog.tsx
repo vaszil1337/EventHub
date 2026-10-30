@@ -22,6 +22,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { AuthUser } from '@/features/auth/types';
 import { UserRole } from '@/features/events/types';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface AuthDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ interface AuthDialogProps {
 
 export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuccess }) => {
   const { login, register } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,12 +143,12 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             component="h2"
             sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}
           >
-            {activeTab === 0 ? 'Welcome back' : 'Create an account'}
+            {activeTab === 0 ? t('auth.welcomeBackHeading') : t('auth.register')}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {activeTab === 0
-              ? 'Sign in to access your event passes and reservations.'
-              : 'Enter your details to register for EventHub.'}
+              ? t('auth.signInDescription')
+              : t('auth.registerDescription')}
           </Typography>
         </Box>
         <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary', mt: -0.5, mr: -0.5 }}>
@@ -188,8 +190,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           },
         }}
       >
-        <Tab label="Sign In" />
-        <Tab label="Create Account" />
+        <Tab label={t('auth.signIn')} />
+        <Tab label={t('auth.register')} />
       </Tabs>
 
       <DialogContent
@@ -227,7 +229,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             <TextField
               required
               type="email"
-              label="Email Address"
+              label={t('auth.email')}
               placeholder="organizer@eventhub.hu"
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
@@ -237,7 +239,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             <TextField
               required
               type="password"
-              label="Password"
+              label={t('auth.password')}
               placeholder="••••••••"
               value={loginPassword}
               onChange={(e) => setLoginPassword(e.target.value)}
@@ -253,13 +255,13 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
               sx={{ py: 1, fontWeight: 700, borderRadius: '8px', mt: 0.25 }}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             >
-              Sign In
+              {t('auth.signIn')}
             </Button>
 
             {/* Quick Demo Access positioned compactly below submit */}
             <Divider sx={{ my: 0.5, borderColor: 'divider' }}>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                QUICK DEMO ACCOUNTS
+                {t('auth.quickDemoLogin')}
               </Typography>
             </Divider>
 
@@ -280,7 +282,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
                   '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
                 }}
               >
-                Participant Demo
+                {t('auth.participantDemo')}
               </Button>
               <Button
                 variant="outlined"
@@ -298,7 +300,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
                   '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' },
                 }}
               >
-                Organizer Demo
+                {t('auth.organizerDemo')}
               </Button>
             </Box>
           </Box>
@@ -310,7 +312,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           >
             <TextField
               required
-              label="Full Name"
+              label={t('auth.fullName')}
               placeholder="e.g. János Szabó"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
@@ -320,7 +322,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             <TextField
               required
               type="email"
-              label="Email Address"
+              label={t('auth.email')}
               placeholder="janos@example.com"
               value={registerEmail}
               onChange={(e) => setRegisterEmail(e.target.value)}
@@ -330,7 +332,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             <TextField
               required
               type="password"
-              label="Password (min. 6 characters)"
+              label={t('auth.password')}
               placeholder="••••••••"
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
@@ -340,14 +342,14 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
             <TextField
               select
               required
-              label="Account Role"
+              label={t('auth.role')}
               value={registerRole}
               onChange={(e) => setRegisterRole(e.target.value as UserRole)}
               size="small"
               fullWidth
             >
-              <MenuItem value="PARTICIPANT">PARTICIPANT (Book & manage own tickets)</MenuItem>
-              <MenuItem value="ORGANIZER">ORGANIZER (Create events & ticket tiers)</MenuItem>
+              <MenuItem value="PARTICIPANT">{t('auth.participant')}</MenuItem>
+              <MenuItem value="ORGANIZER">{t('auth.organizer')}</MenuItem>
             </TextField>
 
             <Button
@@ -358,7 +360,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
               sx={{ py: 1, fontWeight: 700, borderRadius: '8px', mt: 0.5 }}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             >
-              Register & Sign In
+              {t('auth.registerAndSignIn')}
             </Button>
           </Box>
         )}

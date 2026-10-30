@@ -13,7 +13,9 @@ public final class EventPersistenceMapper {
         return new EventJpaEntity(
                 snapshot.id().value(),
                 snapshot.title(),
+                snapshot.titleHu(),
                 snapshot.description(),
+                snapshot.descriptionHu(),
                 snapshot.date(),
                 snapshot.venue().id().value(),
                 snapshot.venue().name(),
@@ -73,7 +75,9 @@ public final class EventPersistenceMapper {
         EventSnapshot snapshot = new EventSnapshot(
                 EventId.of(entity.getId()),
                 entity.getTitle(),
+                entity.getTitleHu() != null && !entity.getTitleHu().isBlank() ? entity.getTitleHu() : entity.getTitle(),
                 entity.getDescription(),
+                entity.getDescriptionHu() != null && !entity.getDescriptionHu().isBlank() ? entity.getDescriptionHu() : entity.getDescription(),
                 entity.getDate(),
                 Venue.of(entity.getVenueId(), entity.getVenueName(), entity.getVenueAddress(), entity.getVenueCapacity()),
                 entity.getSoldTicketsCount(),

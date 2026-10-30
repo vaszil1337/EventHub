@@ -126,7 +126,9 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
     const newEvent: Event = {
       id: `evt-${Date.now()}`,
       title: body.title,
+      titleHu: body.titleHu,
       description: body.description,
+      descriptionHu: body.descriptionHu,
       date: body.date || new Date().toISOString(),
       venue: {
         id: `ven-${Date.now()}`,
@@ -185,7 +187,9 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
     const updated: Event = {
       ...existing,
       title: body.title !== undefined ? body.title : existing.title,
+      titleHu: body.titleHu !== undefined ? body.titleHu : existing.titleHu,
       description: body.description !== undefined ? body.description : existing.description,
+      descriptionHu: body.descriptionHu !== undefined ? body.descriptionHu : existing.descriptionHu,
       date: body.date !== undefined ? body.date : existing.date,
       venue: {
         ...existing.venue,

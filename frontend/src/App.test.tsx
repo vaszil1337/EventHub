@@ -136,4 +136,38 @@ describe('App End-to-End Component Flow with React Router', () => {
       expect(errorAlert).toHaveTextContent(/is fully booked/i);
     });
   });
+
+  it('switches application language dynamically and updates bilingual content', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await waitFor(() => {
+      expect(screen.getByText('Tech Horizons Summit 2026')).toBeInTheDocument();
+    });
+
+    // Language switcher toggle to Hungarian
+    const huButton = screen.getByTestId('language-btn-hu');
+    await user.click(huButton);
+
+    // Event title should now be rendered in Hungarian
+    await waitFor(() => {
+      expect(screen.getByText('Tech Horizontok Csúcstalálkozó 2026')).toBeInTheDocument();
+      expect(screen.getByText('Lágy Jazz és Soul Est')).toBeInTheDocument();
+      expect(screen.getByText('Vezetői MI és Deep Learning Mesterkurzus')).toBeInTheDocument();
+    });
+
+    // Check localized navbar and UI text
+    expect(screen.getByText('Esemény- és Jegykezelés')).toBeInTheDocument();
+    expect(screen.getByText('Saját jegyek')).toBeInTheDocument();
+
+    // Switch back to English
+    const enButton = screen.getByTestId('language-btn-en');
+    await user.click(enButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Tech Horizons Summit 2026')).toBeInTheDocument();
+      expect(screen.getByText('Event & Ticket Management')).toBeInTheDocument();
+      expect(screen.getByText('My Tickets')).toBeInTheDocument();
+    });
+  });
 });

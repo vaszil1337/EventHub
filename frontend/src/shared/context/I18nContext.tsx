@@ -113,10 +113,22 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children, initialLoc
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 };
 
+const defaultContextValue: I18nContextType = {
+  locale: 'en',
+  setLocale: () => {},
+  t: (path: string, params?: Record<string, string | number>): string => {
+    const found = resolveNestedKey(dictionaries.en, path);
+    if (found !== undefined) {
+      return interpolate(found, params);
+    }
+    return path;
+  },
+};
+
 export const useTranslation = (): I18nContextType => {
   const context = useContext(I18nContext);
   if (!context) {
-    throw new Error('useTranslation must be used within an I18nProvider');
+    return defaultContextValue;
   }
   return context;
 };

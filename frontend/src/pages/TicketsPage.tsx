@@ -46,6 +46,8 @@ import { eventService } from '@/features/events/services/eventService';
 import { Event, UserRole } from '@/features/events/types';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { useTranslation } from '@/shared/context/I18nContext';
+import { getLocalizedEventTitle } from '@/shared/utils/eventLocalization';
 
 interface TicketsPageProps {
   userRole?: UserRole;
@@ -59,6 +61,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
   onOpenAuth,
 }) => {
   const { user, isAuthenticated } = useAuth();
+  const { locale, t } = useTranslation();
   const effectiveRole = user?.role || userRole;
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -116,14 +119,17 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
   const handleCancelTicket = async (ticketId: string) => {
     try {
       setCancellingId(ticketId);
-      setError(null);
-      const updated = await ticketService.cancelTicket(ticketId);
-      setTickets((prev) => prev.map((t) => (t.id === ticketId ? updated : t)));
+      const cancelled = await ticketService.cancelTicket(ticketId);
+
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status: 'CANCELLED' } : t))
+      );
+
       if (onTicketCancelled) {
-        onTicketCancelled(updated);
+        onTicketCancelled(cancelled);
       }
-    } catch (err: any) {
-      setError(err?.body?.message || err?.message || 'Failed to cancel ticket.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel ticket.');
     } finally {
       setCancellingId(null);
     }
@@ -142,7 +148,9 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
     }
     if (searchTerm.trim()) {
       const q = searchTerm.trim().toLowerCase();
-      const eventTitle = eventMap[t.eventId]?.title?.toLowerCase() || '';
+      const event = eventMap[t.eventId];
+      const eventTitleEn = event?.title?.toLowerCase() || '';
+      const eventTitleHu = (event ? getLocalizedEventTitle(event, 'hu') : '').toLowerCase();
       const name = t.participantName.toLowerCase();
       const email = t.participantEmail.toLowerCase();
       const code = t.ticketCode.toLowerCase();
@@ -150,7 +158,8 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
       return (
         name.includes(q) ||
         email.includes(q) ||
-        eventTitle.includes(q) ||
+        eventTitleEn.includes(q) ||
+        eventTitleHu.includes(q) ||
         code.includes(q) ||
         tier.includes(q)
       );
@@ -162,7 +171,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
   const activeTickets = tickets.filter((t) => t.status !== 'CANCELLED');
   const cancelledTickets = tickets.filter((t) => t.status === 'CANCELLED');
   const totalRevenue = activeTickets.reduce((sum, t) => sum + (t.price?.amount || 0), 0);
-  const revenueCurrency = activeTickets[0]?.price?.currency || 'HUF';
+  const revenueCurrency = activeTickets[0]?.price?.currency || 'USD';
   const deliveredEmails = activeTickets.filter((t) => t.emailStatus === 'SENT').length;
   const pendingEmails = activeTickets.filter((t) => t.emailStatus === 'FAILED_PENDING_RETRY').length;
   const emailDeliveryRate = activeTickets.length > 0 ? Math.round((deliveredEmails / activeTickets.length) * 100) : 100;
@@ -206,10 +215,10 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
             <LockOutlinedIcon sx={{ fontSize: 32 }} />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
-            Jelentkezz be a jegyeid megtekintéséhez!
+            {t('tickets.loginPromptTitle')}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3.5 }}>
-            A megvásárolt belépőjegyek és QR check-in kódok a fiókodhoz vannak kapcsolva. Kérjük, lépj be vagy regisztrálj a megtekintésükhöz.
+            {t('tickets.loginPromptSubtitle')}
           </Typography>
           <Button
             variant="contained"
@@ -218,7 +227,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
             startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
             sx={{ px: 4, py: 1.2, fontWeight: 700, borderRadius: '8px' }}
           >
-            Bejelentkezés / Regisztráció
+            {t('tickets.loginPromptButton')}
           </Button>
         </Box>
       </Container>
@@ -262,12 +271,12 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 {effectiveRole === 'ORGANIZER' ? (
                   <>
                     <AssignmentOutlinedIcon sx={{ fontSize: 14 }} />
-                    {filteredTickets.length} {filteredTickets.length === 1 ? 'Reservation' : 'Reservations'} • Organizer Control Panel
+                    {t('tickets.pillReservations', { count: filteredTickets.length })}
                   </>
                 ) : (
                   <>
                     <ConfirmationNumberOutlinedIcon sx={{ fontSize: 14 }} />
-                    {filteredTickets.length} {filteredTickets.length === 1 ? 'Pass Issued' : 'Passes Issued'}
+                    {t('tickets.pillPasses', { count: filteredTickets.length })}
                   </>
                 )}
               </Box>
@@ -283,13 +292,13 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                   letterSpacing: '-0.03em',
                 }}
               >
-                {effectiveRole === 'ORGANIZER' ? 'Event Reservations & Attendees' : 'My Tickets & Passes'}
+                {effectiveRole === 'ORGANIZER' ? t('tickets.organizerTitle') : t('tickets.myTicketsTitle')}
               </Typography>
 
               <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                 {effectiveRole === 'ORGANIZER'
-                  ? `Signed in as Organizer: ${cleanUserName || 'Organizer'} (${user?.email}). Manage participant registrations, email delivery statuses, and revenue.`
-                  : `Showing tickets reserved for ${cleanUserName || 'User'} (${user?.email}). Copy check-in pass codes or cancel bookings.`}
+                  ? t('tickets.organizerSubtitle', { name: cleanUserName || 'Organizer', email: user?.email || '' })
+                  : t('tickets.myTicketsSubtitle', { name: cleanUserName || 'User', email: user?.email || '' })}
               </Typography>
             </Box>
 
@@ -297,7 +306,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
             {effectiveRole === 'PARTICIPANT' && tickets.length > 0 && (
               <TextField
                 size="small"
-                placeholder="Filter by event or pass code..."
+                placeholder={t('tickets.filterPassPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 sx={{ minWidth: { xs: '100%', sm: 280 }, bgcolor: 'background.default' }}
@@ -357,7 +366,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Active Bookings
+                      {t('tickets.kpiActiveBookings')}
                     </Typography>
                     <Box
                       sx={{
@@ -379,7 +388,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                       {activeTickets.length}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                      out of {tickets.length} total issued
+                      {t('tickets.kpiOutOfTotal', { count: tickets.length })}
                     </Typography>
                   </Box>
                 </Card>
@@ -403,7 +412,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Gross Revenue
+                      {t('tickets.kpiGrossRevenue')}
                     </Typography>
                     <Box
                       sx={{
@@ -422,10 +431,10 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                   </Box>
                   <Box>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.1, mb: 0.5 }}>
-                      {formatMoney({ amount: totalRevenue, currency: revenueCurrency })}
+                      {formatMoney({ amount: totalRevenue, currency: revenueCurrency }, locale)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                      from {activeTickets.length} active seats
+                      {t('tickets.kpiFromActiveSeats', { count: activeTickets.length })}
                     </Typography>
                   </Box>
                 </Card>
@@ -449,7 +458,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Email Health
+                      {t('tickets.kpiEmailHealth')}
                     </Typography>
                     <Box
                       sx={{
@@ -471,7 +480,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                       {emailDeliveryRate}%
                     </Typography>
                     <Typography variant="caption" sx={{ color: pendingEmails > 0 ? 'warning.dark' : 'text.secondary', fontWeight: 500 }}>
-                      {pendingEmails > 0 ? `${pendingEmails} retry queued` : 'All confirmation emails sent'}
+                      {pendingEmails > 0 ? t('tickets.kpiEmailsRetryQueued', { count: pendingEmails }) : t('tickets.kpiAllEmailsSent')}
                     </Typography>
                   </Box>
                 </Card>
@@ -495,7 +504,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Cancelled Seats
+                      {t('tickets.kpiCancelledSeats')}
                     </Typography>
                     <Box
                       sx={{
@@ -517,7 +526,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                       {cancelledTickets.length}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                      released back to event capacity
+                      {t('tickets.kpiReleasedBack')}
                     </Typography>
                   </Box>
                 </Card>
@@ -543,7 +552,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', flexGrow: 1 }}>
                 <TextField
                   size="small"
-                  placeholder="Search attendee, email, code or tier..."
+                  placeholder={t('tickets.filterSearchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   sx={{ minWidth: { xs: '100%', sm: 280 }, bgcolor: 'background.default' }}
@@ -557,35 +566,35 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 />
 
                 <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
-                  <InputLabel id="event-filter-select-label">Event</InputLabel>
+                  <InputLabel id="event-filter-select-label">{t('tickets.filterEventLabel')}</InputLabel>
                   <Select
                     labelId="event-filter-select-label"
                     id="event-filter-select"
                     value={selectedEventFilter}
-                    label="Event"
+                    label={t('tickets.filterEventLabel')}
                     onChange={(e) => setSelectedEventFilter(e.target.value)}
                   >
-                    <MenuItem value="ALL">All Events ({Object.keys(eventMap).length || 'All'})</MenuItem>
+                    <MenuItem value="ALL">{t('tickets.allEventsFilterCount', { count: Object.keys(eventMap).length || 'All' })}</MenuItem>
                     {Object.values(eventMap).map((ev) => (
                       <MenuItem key={ev.id} value={ev.id}>
-                        {ev.title}
+                        {getLocalizedEventTitle(ev, locale)}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
 
                 <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-                  <InputLabel id="status-filter-select-label">Status</InputLabel>
+                  <InputLabel id="status-filter-select-label">{t('tickets.filterStatusLabel')}</InputLabel>
                   <Select
                     labelId="status-filter-select-label"
                     id="status-filter-select"
                     value={selectedStatusFilter}
-                    label="Status"
+                    label={t('tickets.filterStatusLabel')}
                     onChange={(e) => setSelectedStatusFilter(e.target.value)}
                   >
-                    <MenuItem value="ALL">All Statuses</MenuItem>
-                    <MenuItem value="CONFIRMED">Confirmed only</MenuItem>
-                    <MenuItem value="CANCELLED">Cancelled only</MenuItem>
+                    <MenuItem value="ALL">{t('tickets.allStatuses')}</MenuItem>
+                    <MenuItem value="CONFIRMED">{t('tickets.confirmedOnly')}</MenuItem>
+                    <MenuItem value="CANCELLED">{t('tickets.cancelledOnly')}</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -600,7 +609,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                   }}
                   sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.8rem' }}
                 >
-                  Reset Filters
+                  {t('tickets.resetFilters')}
                 </Button>
               )}
             </Box>
@@ -621,25 +630,25 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Attendee
+                      {t('tickets.thAttendee')}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Event & Date
+                      {t('tickets.thEventDate')}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Ticket Tier
+                      {t('tickets.thTier')}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Pass Code
+                      {t('tickets.thCode')}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Email Delivery
+                      {t('tickets.thEmailStatus')}
                     </TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Ticket Status
+                      {t('tickets.thStatus')}
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', color: 'text.secondary', letterSpacing: '0.04em', py: 1.5 }}>
-                      Actions
+                      {t('tickets.thActions')}
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -648,7 +657,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                     <TableRow>
                       <TableCell colSpan={7} sx={{ py: 8, textAlign: 'center' }}>
                         <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>
-                          No reservations found matching your criteria.
+                          {t('tickets.noReservationsFound')}
                         </Typography>
                         {(searchTerm || selectedEventFilter !== 'ALL' || selectedStatusFilter !== 'ALL') && (
                           <Button
@@ -660,7 +669,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                               setSelectedStatusFilter('ALL');
                             }}
                           >
-                            Clear all filters
+                            {t('tickets.clearAllFilters')}
                           </Button>
                         )}
                       </TableCell>
@@ -694,11 +703,11 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                           {/* Event & Date */}
                           <TableCell sx={{ py: 2 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                              {event ? event.title : ticket.eventId}
+                              {event ? getLocalizedEventTitle(event, locale) : ticket.eventId}
                             </Typography>
                             {event && (
                               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                {formatEventDate(event.date)} • {event.venue.name}
+                                {formatEventDate(event.date, locale)} • {event.venue.name}
                               </Typography>
                             )}
                           </TableCell>
@@ -706,10 +715,10 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                           {/* Tier & Price */}
                           <TableCell sx={{ py: 2 }}>
                             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', textTransform: 'uppercase' }}>
-                              {ticket.ticketTypeName || 'Standard'}
+                              {ticket.ticketTypeName || t('common.standard')}
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontFeatureSettings: '"tnum"' }}>
-                              {formatMoney(ticket.price)}
+                              {formatMoney(ticket.price, locale)}
                             </Typography>
                           </TableCell>
 
@@ -730,7 +739,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                               >
                                 {ticket.ticketCode}
                               </Typography>
-                              <Tooltip title={copiedTicketId === ticket.id ? 'Copied' : 'Copy code'}>
+                              <Tooltip title={copiedTicketId === ticket.id ? t('booking.codeCopied') : t('booking.copyCode')}>
                                 <Button
                                   size="small"
                                   onClick={() => handleCopyTicketCode(ticket.ticketCode, ticket.id)}
@@ -758,7 +767,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 size="small"
                                 variant="outlined"
                                 icon={<WarningAmberOutlinedIcon sx={{ fontSize: 14 }} />}
-                                label="Retry Queued"
+                                label={t('tickets.emailPending')}
                                 sx={{
                                   borderColor: 'warning.main',
                                   color: 'warning.dark',
@@ -771,7 +780,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 size="small"
                                 variant="outlined"
                                 icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />}
-                                label="Delivered"
+                                label={t('tickets.emailDelivered')}
                                 sx={{
                                   borderColor: 'success.main',
                                   color: 'success.dark',
@@ -787,7 +796,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                             {isCancelled ? (
                               <Chip
                                 size="small"
-                                label="CANCELLED"
+                                label={t('tickets.statusCancelled')}
                                 sx={{
                                   bgcolor: 'error.light',
                                   border: '1px solid',
@@ -800,7 +809,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                             ) : (
                               <Chip
                                 size="small"
-                                label="CONFIRMED"
+                                label={t('tickets.statusConfirmed')}
                                 sx={{
                                   bgcolor: 'success.light',
                                   border: '1px solid',
@@ -837,11 +846,11 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                   },
                                 }}
                               >
-                                {cancellingId === ticket.id ? 'Cancelling...' : 'Cancel'}
+                                {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelTicket')}
                               </Button>
                             ) : (
                               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                                Released
+                                {t('tickets.released')}
                               </Typography>
                             )}
                           </TableCell>
@@ -889,10 +898,10 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                   <ConfirmationNumberOutlinedIcon sx={{ fontSize: 24 }} />
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
-                  No tickets reserved yet
+                  {t('tickets.noTicketsYet')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-                  Explore the upcoming events and reserve your seat to get your digital access code.
+                  {t('tickets.noTicketsYetDesc')}
                 </Typography>
                 <Button
                   component={RouterLink}
@@ -905,7 +914,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                     py: 1,
                   }}
                 >
-                  Browse Events
+                  {t('tickets.browseEvents')}
                 </Button>
               </Box>
             ) : (
@@ -913,7 +922,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                 {filteredTickets.map((ticket) => {
                   const event = eventMap[ticket.eventId];
                   const purchaseDate = new Date(ticket.purchaseDate);
-                  const formattedPurchaseDate = purchaseDate.toLocaleDateString('en-US', {
+                  const formattedPurchaseDate = purchaseDate.toLocaleDateString(locale === 'hu' ? 'hu-HU' : 'en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
@@ -970,7 +979,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                   bgcolor: isCancelled ? 'error.main' : 'success.main',
                                 }}
                               />
-                              {isCancelled ? 'CANCELLED' : 'CONFIRMED PASS'}
+                              {isCancelled ? t('tickets.statusCancelled') : t('tickets.statusConfirmedPass')}
                             </Box>
 
                             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
@@ -989,7 +998,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                               mb: 0.5,
                             }}
                           >
-                            {event ? event.title : 'Event Reservation'}
+                            {event ? getLocalizedEventTitle(event, locale) : 'Event Reservation'}
                           </Typography>
 
                           {ticket.ticketTypeName && (
@@ -1004,7 +1013,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 display: 'block',
                               }}
                             >
-                              Tier: {ticket.ticketTypeName}
+                              {t('tickets.tierLabel')}: {ticket.ticketTypeName}
                             </Typography>
                           )}
 
@@ -1014,7 +1023,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
                                 <CalendarTodayOutlinedIcon sx={{ fontSize: '0.85rem' }} />
                                 <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                  {formatEventDate(event.date)}
+                                  {formatEventDate(event.date, locale)}
                                 </Typography>
                               </Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
@@ -1067,7 +1076,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                     display: 'block',
                                   }}
                                 >
-                                  PASS CODE
+                                  {t('tickets.thCode')}
                                 </Typography>
                                 <Typography
                                   variant="body2"
@@ -1085,7 +1094,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 </Typography>
                               </Box>
 
-                              <Tooltip title={copiedTicketId === ticket.id ? 'Copied to clipboard' : 'Copy code'}>
+                              <Tooltip title={copiedTicketId === ticket.id ? t('booking.codeCopied') : t('booking.copyCode')}>
                                 <Button
                                   size="small"
                                   variant="text"
@@ -1115,14 +1124,14 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                 <>
                                   <WarningAmberOutlinedIcon sx={{ fontSize: 14, color: 'warning.main' }} />
                                   <Typography variant="caption" sx={{ color: 'warning.dark', fontWeight: 600 }}>
-                                    Email gateway retry queued
+                                    {t('tickets.emailGatewayRetryQueued')}
                                   </Typography>
                                 </>
                               ) : (
                                 <>
                                   <MarkEmailReadOutlinedIcon sx={{ fontSize: 14, color: 'success.main' }} />
                                   <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                                    Confirmation email sent
+                                    {t('tickets.confirmationEmailSent')}
                                   </Typography>
                                 </>
                               )}
@@ -1166,7 +1175,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                   flexShrink: 0,
                                 }}
                               >
-                                {formatMoney(ticket.price)}
+                                {formatMoney(ticket.price, locale)}
                               </Typography>
                             </Box>
 
@@ -1193,7 +1202,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                                   },
                                 }}
                               >
-                                {cancellingId === ticket.id ? 'Cancelling...' : 'Cancel Booking & Release Seat'}
+                                {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelBookingButton')}
                               </Button>
                             )}
                           </Box>

@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { Event } from '@/features/events/types';
 import { EventList } from '@/features/events/components/EventList';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface EventsPageProps {
   events: Event[];
@@ -34,6 +35,8 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   onBookTicket,
   onEditEvent,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Box sx={{ pb: 8 }}>
       {/* Clean Editorial Header */}
@@ -65,7 +68,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
               }}
             >
               <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
-              {allEvents.length} Curated Events • Live Capacity Tracking
+              {t('events.curatedBadge', { count: allEvents.length })}
             </Box>
 
             <Typography
@@ -79,7 +82,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 letterSpacing: '-0.03em',
               }}
             >
-              Curated Events & Experiences
+              {t('events.exploreTitle')}
             </Typography>
 
             <Typography
@@ -90,7 +93,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 fontSize: { xs: '0.95rem', md: '1.05rem' },
               }}
             >
-              Discover technology summits, masterclasses, and acoustic sessions. Instant booking with verified real-time seat capacities.
+              {t('events.exploreSubtitle')}
             </Typography>
           </Box>
         </Container>

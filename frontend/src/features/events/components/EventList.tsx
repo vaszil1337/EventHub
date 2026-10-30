@@ -13,6 +13,7 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { Event } from '@/features/events/types';
 import { EventCard } from './EventCard';
+import { useTranslation } from '@/shared/context/I18nContext';
 
 interface EventListProps {
   events: Event[];
@@ -39,6 +40,8 @@ export const EventList: React.FC<EventListProps> = ({
   onBookTicket,
   onEditEvent,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Box sx={{ py: 3 }}>
       {/* Controls Bar: Title & Filters */}
@@ -61,17 +64,20 @@ export const EventList: React.FC<EventListProps> = ({
             component="h2"
             sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.02em' }}
           >
-            All Events
+            {t('events.allEvents')}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Showing {events.length} upcoming {events.length === 1 ? 'event' : 'events'}
+            {t('events.showingCount', {
+              count: events.length,
+              countLabel: events.length === 1 ? t('events.eventSingular') : t('events.eventPlural'),
+            })}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
           <TextField
             size="small"
-            placeholder="Search events, venues..."
+            placeholder={t('events.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             InputProps={{
@@ -105,10 +111,10 @@ export const EventList: React.FC<EventListProps> = ({
               },
             }}
           >
-            <MenuItem value="all">All Categories</MenuItem>
+            <MenuItem value="all">{t('events.allCategories')}</MenuItem>
             {categories.map((cat) => (
               <MenuItem key={cat} value={cat.toLowerCase()}>
-                {cat}
+                {t(`categories.${cat.toLowerCase()}`) || cat}
               </MenuItem>
             ))}
           </TextField>
@@ -154,10 +160,10 @@ export const EventList: React.FC<EventListProps> = ({
         >
           <CalendarMonthOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1.5 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
-            No events found
+            {t('events.noEventsTitle')}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Try adjusting your search criteria or category filter.
+            {t('events.noEventsSubtitle')}
           </Typography>
         </Box>
       )}

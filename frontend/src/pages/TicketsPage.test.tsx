@@ -45,10 +45,10 @@ describe('TicketsPage Authentication & Authorization', () => {
     renderTicketsPage(unauthContext, { onOpenAuth: handleOpenAuth });
 
     expect(screen.getByTestId('unauthenticated-tickets-notice')).toBeInTheDocument();
-    expect(screen.getByText(/Jelentkezz be a jegyeid megtekintéséhez!/i)).toBeInTheDocument();
+    expect(screen.getByText(/(Sign in to view your tickets|Jelentkezz be a jegyeid megtekintéséhez)/i)).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/Search attendee, email/i)).not.toBeInTheDocument();
 
-    const loginButton = screen.getByRole('button', { name: /Bejelentkezés \/ Regisztráció/i });
+    const loginButton = screen.getByRole('button', { name: /(Sign In \/ Register|Bejelentkezés \/ Regisztráció)/i });
     expect(loginButton).toBeInTheDocument();
     userEvent.setup().click(loginButton);
     expect(loginButton).toBeEnabled();
