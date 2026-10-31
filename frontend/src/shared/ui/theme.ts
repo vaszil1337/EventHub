@@ -5,6 +5,10 @@ import { createTheme } from '@mui/material/styles';
  * Similar to shadcn/ui's tailwind/css variables setup, all semantic tokens
  * (colors, typography, surfaces, borders) are declared here in a single place.
  *
+ * Supports native MUI v6 Color Schemes (Light & Dark mode):
+ * - Light canvas: Zinc 50 (#fafafa) with white cards (#ffffff) and Zinc 900 text/buttons (#18181b).
+ * - Dark canvas: Deep Zinc 950 (#09090b) with elevated Zinc 900 cards (#141417) and crisp Zinc 50 text/buttons (#fafafa).
+ *
  * Components consume built-in theme variables:
  * - 'background.default', 'background.paper'
  * - 'text.primary', 'text.secondary'
@@ -17,63 +21,128 @@ import { createTheme } from '@mui/material/styles';
  * - 'grey.50', 'grey.100', 'grey.200', etc.
  */
 export const theme = createTheme({
-  cssVariables: true,
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#18181b', // Zinc 900
-      light: '#27272a',
-      dark: '#09090b',
-      contrastText: '#ffffff',
+  cssVariables: {
+    colorSchemeSelector: 'data-mui-color-scheme',
+  },
+  defaultColorScheme: 'light',
+  colorSchemes: {
+    light: {
+      palette: {
+        primary: {
+          main: '#18181b', // Zinc 900
+          light: '#27272a',
+          dark: '#09090b',
+          contrastText: '#ffffff',
+        },
+        secondary: {
+          main: '#2563eb', // Royal Blue
+          light: '#3b82f6',
+          dark: '#1d4ed8',
+          contrastText: '#ffffff',
+        },
+        background: {
+          default: '#fafafa', // Neutral canvas
+          paper: '#ffffff',   // Cards & modals
+        },
+        text: {
+          primary: '#09090b',   // Zinc 950
+          secondary: '#71717a', // Zinc 500
+        },
+        divider: '#e4e4e7', // Zinc 200 (standard border)
+        grey: {
+          50: '#fafafa',
+          100: '#f4f4f5',
+          200: '#e4e4e7',
+          300: '#d4d4d8',
+          400: '#a1a1aa',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a',
+          900: '#18181b',
+        },
+        error: {
+          main: '#dc2626',
+          light: '#fef2f2',
+          dark: '#991b1b',
+          contrastText: '#ffffff',
+        },
+        warning: {
+          main: '#d97706',
+          light: '#fffbeb',
+          dark: '#92400e',
+          contrastText: '#ffffff',
+        },
+        success: {
+          main: '#16a34a',
+          light: '#f0fdf4',
+          dark: '#166534',
+          contrastText: '#ffffff',
+        },
+        action: {
+          hover: '#f4f4f5',
+          selected: '#e4e4e7',
+        },
+      },
     },
-    secondary: {
-      main: '#2563eb', // Royal Blue
-      light: '#3b82f6',
-      dark: '#1d4ed8',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#fafafa', // Neutral canvas
-      paper: '#ffffff',   // Cards & modals
-    },
-    text: {
-      primary: '#09090b',   // Zinc 950
-      secondary: '#71717a', // Zinc 500
-    },
-    divider: '#e4e4e7', // Zinc 200 (standard border)
-    grey: {
-      50: '#fafafa',
-      100: '#f4f4f5',
-      200: '#e4e4e7',
-      300: '#d4d4d8',
-      400: '#a1a1aa',
-      500: '#71717a',
-      600: '#52525b',
-      700: '#3f3f46',
-      800: '#27272a',
-      900: '#18181b',
-    },
-    error: {
-      main: '#dc2626',
-      light: '#fef2f2',
-      dark: '#991b1b',
-      contrastText: '#ffffff',
-    },
-    warning: {
-      main: '#d97706',
-      light: '#fffbeb',
-      dark: '#92400e',
-      contrastText: '#ffffff',
-    },
-    success: {
-      main: '#16a34a',
-      light: '#f0fdf4',
-      dark: '#166534',
-      contrastText: '#ffffff',
-    },
-    action: {
-      hover: '#f4f4f5',
-      selected: '#e4e4e7',
+    dark: {
+      palette: {
+        primary: {
+          main: '#fafafa', // Zinc 50 (light crisp button on dark canvas)
+          light: '#ffffff',
+          dark: '#e4e4e7',
+          contrastText: '#09090b',
+        },
+        secondary: {
+          main: '#3b82f6', // Bright Royal Blue
+          light: '#60a5fa',
+          dark: '#1d4ed8',
+          contrastText: '#ffffff',
+        },
+        background: {
+          default: '#09090b', // Zinc 950 canvas
+          paper: '#141417',   // Zinc 900 elevated surfaces
+        },
+        text: {
+          primary: '#f4f4f5',   // Zinc 100
+          secondary: '#a1a1aa', // Zinc 400
+        },
+        divider: '#27272a', // Zinc 800 subtle borders
+        grey: {
+          50: '#fafafa',
+          100: '#f4f4f5',
+          200: '#e4e4e7',
+          300: '#d4d4d8',
+          400: '#a1a1aa',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a',
+          900: '#18181b',
+        },
+        error: {
+          main: '#f87171',
+          light: '#450a0a',
+          dark: '#b91c1c',
+          contrastText: '#ffffff',
+        },
+        warning: {
+          main: '#fbbf24',
+          light: '#451a03',
+          dark: '#d97706',
+          contrastText: '#ffffff',
+        },
+        success: {
+          main: '#4ade80',
+          light: '#052e16',
+          dark: '#15803d',
+          contrastText: '#ffffff',
+        },
+        action: {
+          hover: '#27272a',
+          selected: '#3f3f46',
+        },
+      },
     },
   },
   typography: {
@@ -135,8 +204,8 @@ export const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: (theme) => ({
         body: {
-          backgroundColor: theme.palette.background.default,
-          color: theme.palette.text.primary,
+          backgroundColor: theme.vars ? theme.vars.palette.background.default : theme.palette.background.default,
+          color: theme.vars ? theme.vars.palette.text.primary : theme.palette.text.primary,
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
         },
@@ -154,19 +223,31 @@ export const theme = createTheme({
           transition: 'all 0.15s ease-in-out',
         },
         containedPrimary: ({ theme }) => ({
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
+          backgroundColor: theme.vars ? theme.vars.palette.primary.main : theme.palette.primary.main,
+          color: theme.vars ? theme.vars.palette.primary.contrastText : theme.palette.primary.contrastText,
           '&:hover': {
-            backgroundColor: theme.palette.primary.light,
+            backgroundColor: theme.vars ? theme.vars.palette.primary.light : theme.palette.primary.light,
           },
+          ...theme.applyStyles('dark', {
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            '&:hover': {
+              backgroundColor: theme.palette.grey[300],
+            },
+          }),
         }),
         outlined: ({ theme }) => ({
-          borderColor: theme.palette.divider,
-          color: theme.palette.text.primary,
+          borderColor: theme.vars ? theme.vars.palette.divider : theme.palette.divider,
+          color: theme.vars ? theme.vars.palette.text.primary : theme.palette.text.primary,
           '&:hover': {
-            borderColor: theme.palette.grey[400],
-            backgroundColor: theme.palette.action.hover,
+            borderColor: theme.vars ? theme.vars.palette.grey[400] : theme.palette.grey[400],
+            backgroundColor: theme.vars ? theme.vars.palette.action.hover : theme.palette.action.hover,
           },
+          ...theme.applyStyles('dark', {
+            '&:hover': {
+              borderColor: theme.palette.grey[600],
+            },
+          }),
         }),
       },
     },
@@ -175,14 +256,21 @@ export const theme = createTheme({
         root: ({ theme }) => ({
           borderRadius: 10,
           border: '1px solid',
-          borderColor: theme.palette.divider,
-          backgroundColor: theme.palette.background.paper,
+          borderColor: theme.vars ? theme.vars.palette.divider : theme.palette.divider,
+          backgroundColor: theme.vars ? theme.vars.palette.background.paper : theme.palette.background.paper,
           boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           '&:hover': {
-            borderColor: theme.palette.grey[400],
+            borderColor: theme.vars ? theme.vars.palette.grey[400] : theme.palette.grey[400],
             boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.05)',
           },
+          ...theme.applyStyles('dark', {
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.4)',
+            '&:hover': {
+              borderColor: theme.palette.grey[700],
+              boxShadow: '0 6px 20px 0 rgba(0, 0, 0, 0.6)',
+            },
+          }),
         }),
       },
     },
@@ -192,7 +280,7 @@ export const theme = createTheme({
           backgroundImage: 'none',
         },
         outlined: ({ theme }) => ({
-          borderColor: theme.palette.divider,
+          borderColor: theme.vars ? theme.vars.palette.divider : theme.palette.divider,
         }),
       },
     },
@@ -209,15 +297,20 @@ export const theme = createTheme({
         root: ({ theme }) => ({
           borderRadius: 8,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.divider,
+            borderColor: theme.vars ? theme.vars.palette.divider : theme.palette.divider,
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.grey[400],
+            borderColor: theme.vars ? theme.vars.palette.grey[400] : theme.palette.grey[400],
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: theme.palette.primary.main,
+            borderColor: theme.vars ? theme.vars.palette.primary.main : theme.palette.primary.main,
             borderWidth: '1.5px',
           },
+          ...theme.applyStyles('dark', {
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: theme.palette.grey[600],
+            },
+          }),
         }),
       },
     },

@@ -64,16 +64,19 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
             component="img"
             image={event.imageUrl}
             alt={displayTitle}
-            sx={{
+            sx={(theme) => ({
               height: '100%',
               width: '100%',
               objectFit: 'cover',
               filter: isSoldOut ? 'grayscale(30%) brightness(0.95)' : 'none',
-              transition: 'transform 0.4s ease',
+              transition: 'transform 0.4s ease, filter 0.3s ease',
               '&:hover': {
                 transform: 'scale(1.03)',
               },
-            }}
+              ...theme.applyStyles('dark', {
+                filter: isSoldOut ? 'grayscale(30%) brightness(0.85)' : 'brightness(0.9)',
+              }),
+            })}
           />
           {event.category && (
             <Box

@@ -46,9 +46,25 @@ A 4. hét célja a tantárgyi követelménytáblázatban rögzített összes **E
    - **Deklaratív Jegytípus-feloldás (`eventLocalization.ts`)**:
      - Az ad-hoc `if-else` láncok helyett deklaratív, szótár- és lookup-tábla alapú megoldás (`TIER_KEY_MAP`, `DESCRIPTION_MATCHERS`, és $O(1)$ `INITIAL_EVENTS_MAP` fallback).
      - A starter jegyek nevei (*Early Bird belépő*, *Standard belépő*, *VIP belépő*) és dinamikus árazási magyarázatai a kiválasztott nyelv szerint jelennek meg.
+7. **Sötét Mód (Dark Mode) & Egyesített Beállítások Menü (Unified Preferences Dropdown)**:
+   - **MUI v6 Natív CSS Változók & Színsémák (`colorSchemes`)**:
+     - A `theme.ts` fájlban bevezetésre került a `cssVariables: { colorSchemeSelector: 'data-mui-color-scheme' }` és a `colorSchemes: { light, dark }` konfiguráció.
+     - **Világos Zinc téma**: Tiszta Zinc 50 (`#fafafa`) háttér, fehér (`#ffffff`) kártyák és Zinc 900 (`#18181b`) kiemelt akciógombok.
+     - **Sötét Zinc téma**: Mély Zinc 950 (`#09090b`) háttér, emelt szintű Zinc 900 (`#141417`) kártyák és felületek, tiszta fehér/Zinc 50 (`#fafafa`) szövegek és akciógombok, Zinc 800 (`#27272a`) diszkrét elválasztóvonalak.
+     - A `main.tsx`-ben az `InitColorSchemeScript` garantálja az azonnali renderelést (FOUC villanás nélkül) és a témapreferencia automatikus `localStorage` perzisztálását.
+   - **Egyesített Beállítások Dropdown (`SettingsDropdown.tsx`)**:
+     - A Navbarban korábban önállóan álló nyelvválasztó helyét egy elegáns, fogaskerék ikonnal (`SettingsOutlinedIcon`) ellátott beállítások menü vette át.
+     - A gomb felületén azonnal látható az aktuális státusz (pl. `EN ☀️` vagy `HU 🌙`).
+     - A menüt megnyitva két jól elkülönített szekcióban érhető el:
+       1. **Nyelvválasztás**: English (EN) és Magyar (HU) opciók, pipával jelölve az aktív kiválasztást.
+       2. **Megjelenés (Téma)**: Világos (Light) és Sötét (Dark) mód választás, ikonokkal és vizuális visszajelzéssel.
+   - **Képek Fényerő-csökkentése Sötét Módban (`brightness(0.9)`)**:
+     - Az események borítóképein (`EventCard.tsx`, `EventDetailPage.tsx`) `theme.applyStyles('dark', { filter: 'brightness(0.9)' })` szűrő fut le, így éjszaka vagy sötét környezetben a képek fehérebb részei sem vakítják a felhasználót.
+   - **Auth Modal Feliratok Javítása**:
+     - Az `AuthDialog.tsx` komponensben optimalizálásra került a belső térköz (`pt: 1.5`, `pt: 1`), így a kitöltött input mezők felugró (`shrink`) címkéi (`Email address`, `Password`) többé nem vágódnak le felül a görgethető dialógusban.
 
 ---
 
 ## 2. Tesztelési Eredmények
 - **Backend (`mvn test`)**: 49/49 teszt sikeres (beleértve a dinamikus surge árazást, esemény módosítást, a kétnyelvű cím/leírás mentést és validációt, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, a Mailpit/JavaMailSender HTML levélküldést magyar és angol nyelven, valamint a hibatűrő fallbacket).
-- **Frontend (`npm run test:run` & `npm run build`)**: 57/57 Vitest teszt sikeres 12 tesztfájlban (beleértve az `eventLocalization.test.ts` 15 tesztjét, az `I18nContext.test.tsx` és `LanguageSwitcher.test.tsx` teszteket), a TypeScript és Vite produkciós build 0 hibával lefordul.
+- **Frontend (`npm run test:run` & `npm run build`)**: 62/62 Vitest teszt sikeres 13 tesztfájlban (beleértve az új `SettingsDropdown.test.tsx` 4 tesztjét, az `eventLocalization.test.ts` 15 tesztjét, az `I18nContext.test.tsx` és `AuthDialog.test.tsx` teszteket), a TypeScript és Vite produkciós build 0 hibával lefordul.

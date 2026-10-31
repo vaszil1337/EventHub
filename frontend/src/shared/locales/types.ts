@@ -12,6 +12,10 @@ export interface TranslationDictionary {
     success: string;
     details: string;
     language: string;
+    settings: string;
+    appearance: string;
+    themeLight: string;
+    themeDark: string;
     done: string;
     standard: string;
   };

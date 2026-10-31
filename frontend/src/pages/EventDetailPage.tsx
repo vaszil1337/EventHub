@@ -135,11 +135,15 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, 
             component="img"
             src={event.imageUrl}
             alt={displayTitle}
-            sx={{
+            sx={(theme) => ({
               width: '100%',
               height: { xs: 220, md: 380 },
               objectFit: 'cover',
-            }}
+              transition: 'filter 0.3s ease',
+              ...theme.applyStyles('dark', {
+                filter: 'brightness(0.9)',
+              }),
+            })}
           />
         )}
 

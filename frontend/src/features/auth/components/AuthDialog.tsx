@@ -201,8 +201,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
       <DialogContent
         sx={{
           p: 0,
-          pt: 1,
-          px: 0.25,
+          pt: 1.5,
+          px: 0.5,
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -231,7 +231,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           <Box
             component="form"
             onSubmit={handleLogin}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0.5 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}
           >
             <TextField
               required
@@ -315,7 +315,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ open, onClose, onAuthSuc
           <Box
             component="form"
             onSubmit={handleRegister}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0.5 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1 }}
           >
             <TextField
               required

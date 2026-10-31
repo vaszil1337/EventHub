@@ -19,7 +19,7 @@ import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
 import { AuthUser } from '@/features/auth/types';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsDropdown } from './SettingsDropdown';
 import { useTranslation } from '@/shared/context/I18nContext';
 
 interface NavbarProps {
@@ -201,8 +201,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </Button>
             )}
 
-            {/* Language Switcher (EN / HU) */}
-            <LanguageSwitcher />
+            {/* Unified Preferences: Language & Theme Switcher */}
+            <SettingsDropdown />
 
             {/* Authenticated User Badge or Sign In Button */}
             {user ? (
