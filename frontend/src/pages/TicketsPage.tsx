@@ -49,6 +49,42 @@ import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedTierName } from '@/shared/utils/eventLocalization';
 import { translateBackendMessage } from '@/shared/utils/errorTranslator';
+import { useModal } from '@/shared/context/ModalContext';
+import { useNotification } from '@/shared/context/NotificationContext';
+import { useTicket } from '@/features/ticket-booking/context/TicketContext';
+import { useEventsContext } from '@/features/events/context/EventsContext';
+
+function useSafeModal() {
+  try {
+    return useModal();
+  } catch {
+    return { openAuthModal: () => {} };
+  }
+}
+
+function useSafeNotification() {
+  try {
+    return useNotification();
+  } catch {
+    return { notify: () => {} };
+  }
+}
+
+function useSafeTicket() {
+  try {
+    return useTicket();
+  } catch {
+    return { refreshTicketCount: async () => {}, decrementTicketCount: () => {} };
+  }
+}
+
+function useSafeEvents() {
+  try {
+    return useEventsContext();
+  } catch {
+    return { refreshEvents: async () => {} };
+  }
+}
 
 interface TicketsPageProps {
   userRole?: UserRole;
@@ -59,10 +95,16 @@ interface TicketsPageProps {
 export const TicketsPage: React.FC<TicketsPageProps> = ({
   userRole = 'PARTICIPANT',
   onTicketCancelled,
-  onOpenAuth,
+  onOpenAuth: propOnOpenAuth,
 }) => {
   const { user, isAuthenticated } = useAuth();
   const { locale, t } = useTranslation();
+  const { openAuthModal } = useSafeModal();
+  const { notify } = useSafeNotification();
+  const { refreshTicketCount, decrementTicketCount } = useSafeTicket();
+  const { refreshEvents } = useSafeEvents();
+
+  const onOpenAuth = propOnOpenAuth ?? openAuthModal;
   const effectiveRole = user?.role || userRole;
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -128,6 +170,14 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
 
       if (onTicketCancelled) {
         onTicketCancelled(cancelled);
+      } else {
+        await refreshEvents();
+        if (user) {
+          await refreshTicketCount();
+        } else {
+          decrementTicketCount();
+        }
+        notify(t('tickets.reservationCancelledSuccess', { code: cancelled.ticketCode }), 'info');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('tickets.cancelFailed'));

@@ -24,13 +24,37 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
 import { translateBackendMessage } from '@/shared/utils/errorTranslator';
+import { useModal } from '@/shared/context/ModalContext';
+
+function useSafeModal() {
+  try {
+    return useModal();
+  } catch {
+    return {
+      openAuthModal: () => {},
+      closeAuthModal: () => {},
+      openOrganizerModal: () => {},
+      closeOrganizerModal: () => {},
+      openBookingModal: () => {},
+      closeBookingModal: () => {},
+      openEditModal: () => {},
+      closeEditModal: () => {},
+    };
+  }
+}
 
 interface EventDetailPageProps {
-  onBookTicket: (event: Event) => void;
+  onBookTicket?: (event: Event) => void;
   onEditEvent?: (event: Event) => void;
 }
 
-export const EventDetailPage: React.FC<EventDetailPageProps> = ({ onBookTicket, onEditEvent }) => {
+export const EventDetailPage: React.FC<EventDetailPageProps> = ({
+  onBookTicket: propOnBookTicket,
+  onEditEvent: propOnEditEvent,
+}) => {
+  const { openBookingModal, openEditModal } = useSafeModal();
+  const onBookTicket = propOnBookTicket ?? openBookingModal;
+  const onEditEvent = propOnEditEvent ?? openEditModal;
   const { user } = useAuth();
   const { locale, t } = useTranslation();
   const isOrganizer = user?.role === 'ORGANIZER';

@@ -21,6 +21,43 @@ import { NavLink as RouterNavLink, Link as RouterLink } from 'react-router-dom';
 import { AuthUser } from '@/features/auth/types';
 import { SettingsDropdown } from './SettingsDropdown';
 import { useTranslation } from '@/shared/context/I18nContext';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useTicket } from '@/features/ticket-booking/context/TicketContext';
+import { useModal } from '@/shared/context/ModalContext';
+import { useNotification } from '@/shared/context/NotificationContext';
+
+function useSafeTicket() {
+  try {
+    return useTicket();
+  } catch {
+    return { totalTickets: 0, refreshTicketCount: async () => {}, incrementTicketCount: () => {}, decrementTicketCount: () => {}, resetTicketCount: () => {} };
+  }
+}
+
+function useSafeModal() {
+  try {
+    return useModal();
+  } catch {
+    return {
+      openAuthModal: () => {},
+      closeAuthModal: () => {},
+      openOrganizerModal: () => {},
+      closeOrganizerModal: () => {},
+      openBookingModal: () => {},
+      closeBookingModal: () => {},
+      openEditModal: () => {},
+      closeEditModal: () => {},
+    };
+  }
+}
+
+function useSafeNotification() {
+  try {
+    return useNotification();
+  } catch {
+    return { notify: () => {}, closeNotification: () => {}, notification: { open: false, message: '', severity: 'info' as const } };
+  }
+}
 
 interface NavbarProps {
   totalTicketsCount?: number;
@@ -31,13 +68,31 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  totalTicketsCount = 0,
-  user = null,
+  totalTicketsCount,
+  user: propUser,
   onOpenAuthDialog,
-  onLogout,
+  onLogout: propOnLogout,
   onOpenOrganizerDialog,
 }) => {
   const { t } = useTranslation();
+  const { user: authUser, logout: authLogout } = useAuth();
+  const { totalTickets } = useSafeTicket();
+  const { openAuthModal, openOrganizerModal } = useSafeModal();
+  const { notify } = useSafeNotification();
+
+  const user = propUser !== undefined ? propUser : authUser;
+  const count = totalTicketsCount !== undefined ? totalTicketsCount : totalTickets;
+  const handleOpenAuth = onOpenAuthDialog ?? openAuthModal;
+  const handleOpenOrganizer = onOpenOrganizerDialog ?? openOrganizerModal;
+
+  const handleLogout = React.useCallback(() => {
+    if (propOnLogout) {
+      propOnLogout();
+    } else {
+      authLogout();
+      notify(t('auth.signedOutSuccess'), 'info');
+    }
+  }, [propOnLogout, authLogout, notify, t]);
 
   return (
     <AppBar
@@ -164,9 +219,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
             >
               {user?.role === 'ORGANIZER' ? t('nav.reservations') : t('nav.myTickets')}
-              {totalTicketsCount > 0 && (
+              {count > 0 && (
                 <Chip
-                  label={totalTicketsCount}
+                  label={count}
                   size="small"
                   sx={{
                     ml: 1,
@@ -182,12 +237,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Button>
 
             {/* Organizer Action Button (Visible when authenticated as ORGANIZER) */}
-            {user?.role === 'ORGANIZER' && onOpenOrganizerDialog && (
+            {user?.role === 'ORGANIZER' && (
               <Button
                 variant="contained"
                 size="small"
                 startIcon={<AddCircleOutlineIcon sx={{ fontSize: 16 }} />}
-                onClick={onOpenOrganizerDialog}
+                onClick={handleOpenOrganizer}
                 data-testid="organizer-manage-button"
                 sx={{
                   borderRadius: '6px',
@@ -235,52 +290,48 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {user.role === 'ORGANIZER' ? t('auth.organizer') : t('auth.participant')}
                   </Typography>
                 </Box>
-                {onLogout && (
-                  <Button
-                    size="small"
-                    onClick={onLogout}
-                    startIcon={<LogoutOutlinedIcon sx={{ fontSize: 14 }} />}
-                    sx={{
-                      minWidth: 'auto',
-                      px: 1,
-                      py: 0.35,
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      color: 'text.secondary',
-                      borderRadius: '6px',
-                      '&:hover': { bgcolor: 'background.paper', color: 'error.main' },
-                    }}
-                  >
-                    {t('nav.signOut')}
-                  </Button>
-                )}
-              </Box>
-            ) : (
-              onOpenAuthDialog && (
                 <Button
-                  variant="outlined"
                   size="small"
-                  startIcon={<LoginOutlinedIcon sx={{ fontSize: 16 }} />}
-                  onClick={onOpenAuthDialog}
-                  data-testid="open-auth-dialog-button"
+                  onClick={handleLogout}
+                  startIcon={<LogoutOutlinedIcon sx={{ fontSize: 14 }} />}
                   sx={{
-                    ml: 0.5,
-                    borderRadius: '8px',
-                    borderColor: 'divider',
-                    color: 'text.primary',
+                    minWidth: 'auto',
+                    px: 1,
+                    py: 0.35,
+                    fontSize: '0.72rem',
                     fontWeight: 600,
-                    fontSize: '0.8125rem',
-                    px: 1.5,
-                    py: 0.6,
-                    '&:hover': {
-                      borderColor: 'text.secondary',
-                      bgcolor: 'action.hover',
-                    },
+                    color: 'text.secondary',
+                    borderRadius: '6px',
+                    '&:hover': { bgcolor: 'background.paper', color: 'error.main' },
                   }}
                 >
-                  {t('nav.signIn')}
+                  {t('nav.signOut')}
                 </Button>
-              )
+              </Box>
+            ) : (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<LoginOutlinedIcon sx={{ fontSize: 16 }} />}
+                onClick={handleOpenAuth}
+                data-testid="open-auth-dialog-button"
+                sx={{
+                  ml: 0.5,
+                  borderRadius: '8px',
+                  borderColor: 'divider',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  px: 1.5,
+                  py: 0.6,
+                  '&:hover': {
+                    borderColor: 'text.secondary',
+                    bgcolor: 'action.hover',
+                  },
+                }}
+              >
+                {t('nav.signIn')}
+              </Button>
             )}
           </Box>
         </Toolbar>
