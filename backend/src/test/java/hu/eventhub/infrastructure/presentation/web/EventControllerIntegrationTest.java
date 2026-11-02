@@ -126,7 +126,7 @@ class EventControllerIntegrationTest {
         AuthService authService = new AuthService(userRepository, passwordHasher, tokenProvider, fixedClock);
         BookTicketService bookTicketService = new BookTicketService(
                 eventRepository, ticketRepository, codeGenerator, fixedClock, emailAdapter);
-        CancelTicketService cancelTicketService = new CancelTicketService(eventRepository, ticketRepository);
+        CancelTicketService cancelTicketService = new CancelTicketService(eventRepository, ticketRepository, fixedClock);
         CreateEventService createEventService = new CreateEventService(eventRepository);
         AddTicketTypeService addTicketTypeService = new AddTicketTypeService(eventRepository);
         GetEventsService getEventsService = new GetEventsService(eventRepository);

@@ -45,7 +45,7 @@ import { ticketService } from '@/features/ticket-booking/services/ticketService'
 import { eventService } from '@/features/events/services/eventService';
 import { Event, UserRole } from '@/features/events/types';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { formatMoney, formatEventDate, isEventPast } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedTierName } from '@/shared/utils/eventLocalization';
 import { translateBackendMessage } from '@/shared/utils/errorTranslator';
@@ -180,7 +180,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
         notify(t('tickets.reservationCancelledSuccess', { code: cancelled.ticketCode }), 'info');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('tickets.cancelFailed'));
+      setError(err instanceof Error ? translateBackendMessage(err.message, t) : t('tickets.cancelFailed'));
     } finally {
       setCancellingId(null);
     }
@@ -730,6 +730,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                       const event = eventMap[ticket.eventId];
                       const isCancelled = ticket.status === 'CANCELLED';
                       const emailRetryPending = ticket.emailStatus === 'FAILED_PENDING_RETRY';
+                      const isEventEnded = event ? isEventPast(event.date) : false;
 
                       return (
                         <TableRow
@@ -876,29 +877,50 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                           {/* Actions */}
                           <TableCell align="right" sx={{ py: 2 }}>
                             {!isCancelled ? (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                disabled={cancellingId === ticket.id}
-                                startIcon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
-                                onClick={() => handleCancelTicket(ticket.id)}
-                                data-testid={`cancel-ticket-${ticket.id}`}
-                                sx={{
-                                  borderRadius: '6px',
-                                  borderColor: 'divider',
-                                  color: 'error.main',
-                                  fontWeight: 600,
-                                  fontSize: '0.75rem',
-                                  py: 0.4,
-                                  px: 1.25,
-                                  '&:hover': {
-                                    borderColor: 'error.main',
-                                    bgcolor: 'error.light',
-                                  },
-                                }}
-                              >
-                                {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelTicket')}
-                              </Button>
+                              isEventEnded ? (
+                                <Tooltip title={t('tickets.cannotCancelPastEvent')}>
+                                  <span>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      disabled
+                                      data-testid={`cancel-ticket-${ticket.id}`}
+                                      sx={{
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        py: 0.4,
+                                        px: 1.25,
+                                      }}
+                                    >
+                                      {t('tickets.eventEnded')}
+                                    </Button>
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={cancellingId === ticket.id}
+                                  startIcon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
+                                  onClick={() => handleCancelTicket(ticket.id)}
+                                  data-testid={`cancel-ticket-${ticket.id}`}
+                                  sx={{
+                                    borderRadius: '6px',
+                                    borderColor: 'divider',
+                                    color: 'error.main',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    py: 0.4,
+                                    px: 1.25,
+                                    '&:hover': {
+                                      borderColor: 'error.main',
+                                      bgcolor: 'error.light',
+                                    },
+                                  }}
+                                >
+                                  {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelTicket')}
+                                </Button>
+                              )
                             ) : (
                               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                                 {t('tickets.released')}
@@ -980,6 +1002,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
                   });
                   const isCancelled = ticket.status === 'CANCELLED';
                   const emailRetryPending = ticket.emailStatus === 'FAILED_PENDING_RETRY';
+                  const isEventEnded = event ? isEventPast(event.date) : false;
 
                   return (
                     <Grid item xs={12} sm={6} md={4} key={ticket.id}>
@@ -1232,29 +1255,50 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({
 
                             {/* Cancel Booking Button */}
                             {!isCancelled && (
-                              <Button
-                                fullWidth
-                                size="small"
-                                variant="outlined"
-                                disabled={cancellingId === ticket.id}
-                                startIcon={<CancelOutlinedIcon sx={{ fontSize: 15 }} />}
-                                onClick={() => handleCancelTicket(ticket.id)}
-                                data-testid={`cancel-ticket-${ticket.id}`}
-                                sx={{
-                                  mt: 2,
-                                  borderRadius: '8px',
-                                  borderColor: 'divider',
-                                  color: 'error.main',
-                                  fontWeight: 600,
-                                  fontSize: '0.78rem',
-                                  '&:hover': {
-                                    borderColor: 'error.main',
-                                    bgcolor: 'error.light',
-                                  },
-                                }}
-                              >
-                                {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelBookingButton')}
-                              </Button>
+                              isEventEnded ? (
+                                <Tooltip title={t('tickets.cannotCancelPastEvent')}>
+                                  <span>
+                                    <Button
+                                      fullWidth
+                                      size="small"
+                                      variant="outlined"
+                                      disabled
+                                      data-testid={`cancel-ticket-${ticket.id}`}
+                                      sx={{
+                                        mt: 2,
+                                        borderRadius: '8px',
+                                        fontSize: '0.78rem',
+                                      }}
+                                    >
+                                      {t('tickets.eventEnded')}
+                                    </Button>
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <Button
+                                  fullWidth
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={cancellingId === ticket.id}
+                                  startIcon={<CancelOutlinedIcon sx={{ fontSize: 15 }} />}
+                                  onClick={() => handleCancelTicket(ticket.id)}
+                                  data-testid={`cancel-ticket-${ticket.id}`}
+                                  sx={{
+                                    mt: 2,
+                                    borderRadius: '8px',
+                                    borderColor: 'divider',
+                                    color: 'error.main',
+                                    fontWeight: 600,
+                                    fontSize: '0.78rem',
+                                    '&:hover': {
+                                      borderColor: 'error.main',
+                                      bgcolor: 'error.light',
+                                    },
+                                  }}
+                                >
+                                  {cancellingId === ticket.id ? t('tickets.cancelling') : t('tickets.cancelBookingButton')}
+                                </Button>
+                              )
                             )}
                           </Box>
                         </CardContent>

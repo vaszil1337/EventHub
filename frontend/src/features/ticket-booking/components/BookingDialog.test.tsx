@@ -9,7 +9,7 @@ const mockAvailableEvent: Event = {
   id: 'evt-available-1',
   title: 'React & TypeScript Deep Dive',
   description: 'Learn modern patterns and feature-driven architecture.',
-  date: '2026-10-25T14:00:00.000Z',
+  date: '2026-11-25T14:00:00.000Z',
   venue: {
     id: 'venue-1',
     name: 'Tech Campus Hall',
@@ -18,6 +18,21 @@ const mockAvailableEvent: Event = {
   },
   soldTicketsCount: 40,
   price: { amount: 50, currency: 'USD' },
+};
+
+const mockPastEvent: Event = {
+  id: 'evt-past-1',
+  title: 'Historical Summit 2026',
+  description: 'Event that took place in the past.',
+  date: '2026-10-10T10:00:00.000Z',
+  venue: {
+    id: 'venue-past',
+    name: 'Old Arena',
+    address: '99 Past Way',
+    capacity: 100,
+  },
+  soldTicketsCount: 30,
+  price: { amount: 80, currency: 'USD' },
 };
 
 const mockSoldOutEvent: Event = {
@@ -146,5 +161,22 @@ describe('BookingDialog Integration Tests', () => {
       expect(errorAlert).toBeInTheDocument();
       expect(errorAlert).toHaveTextContent(/participant name is required/i);
     });
+  });
+
+  it('displays warning alert and disables submit button when event has already ended', () => {
+    render(
+      <BookingDialog
+        open={true}
+        event={mockPastEvent}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('past-event-warning-alert')).toBeInTheDocument();
+    expect(screen.getByText(/Cannot book tickets for an event that has already ended/i)).toBeInTheDocument();
+
+    const submitButton = screen.getByTestId('submit-booking-button');
+    expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveTextContent(/Event Ended/i);
   });
 });

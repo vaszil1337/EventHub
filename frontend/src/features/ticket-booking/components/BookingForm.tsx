@@ -13,7 +13,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import { Event, TicketType } from '@/features/events/types';
-import { formatMoney } from '@/shared/utils/formatters';
+import { formatMoney, isEventPast } from '@/shared/utils/formatters';
 import { useTranslation } from '@/shared/context/I18nContext';
 import {
   getLocalizedEventTitle,
@@ -72,6 +72,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { locale, t } = useTranslation();
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
+  const isPast = isEventPast(event.date);
   const tiers = event.ticketTypes || [];
   const activeTier = tiers.find((t) => t.id === selectedTicketTypeId) || tiers[0];
   const displayPrice = activeTier ? activeTier.effectivePrice : event.price;
@@ -249,6 +250,26 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </Alert>
       )}
 
+      {/* Past Event Warning Notice */}
+      {isPast && (
+        <Alert
+          severity="warning"
+          icon={<ErrorOutlineIcon fontSize="small" />}
+          sx={{
+            mb: 2.5,
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: 'warning.main',
+            bgcolor: 'action.hover',
+            color: 'text.primary',
+            fontSize: '0.8125rem',
+          }}
+          data-testid="past-event-warning-alert"
+        >
+          {t('events.cannotBookPastEvent')}
+        </Alert>
+      )}
+
       {/* Dynamic Backend Error Alert */}
       {error && (
         <Alert
@@ -327,7 +348,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={loading}
+            disabled={loading || isPast}
             data-testid="submit-booking-button"
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
             sx={{
@@ -341,7 +362,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               },
             }}
           >
-            {loading ? t('booking.processing') : isSoldOut ? t('booking.attemptRegistration') : t('booking.confirmButton')}
+            {loading
+              ? t('booking.processing')
+              : isPast
+              ? t('events.eventEnded')
+              : isSoldOut
+              ? t('booking.attemptRegistration')
+              : t('booking.confirmButton')}
           </Button>
         </Box>
       </Box>

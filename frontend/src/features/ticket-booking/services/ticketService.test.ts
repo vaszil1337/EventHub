@@ -37,8 +37,8 @@ describe('ticketService', () => {
     });
 
     it('successfully books a ticket when capacity is available and increments soldTicketsCount', async () => {
-      // Event 1 is 'evt-tech-summit-2026' with 45/100
-      const availableEventId = 'evt-tech-summit-2026';
+      // Event 2 is 'evt-jazz-night-2026' with 28/30 (upcoming)
+      const availableEventId = 'evt-jazz-night-2026';
 
       const ticket = await ticketService.bookTicket({
         eventId: availableEventId,
@@ -52,17 +52,75 @@ describe('ticketService', () => {
       expect(ticket.participantEmail).toBe('bob.smith@techcorp.io');
       expect(ticket.eventId).toBe(availableEventId);
       expect(ticket.ticketCode).toMatch(/^EVT-\d{4}-[A-Z0-9]{4}$/);
-      expect(ticket.price.amount).toBe(120);
+      expect(ticket.price.amount).toBe(35);
       expect(ticket.price.currency).toBe('USD');
 
-      // Verify event sold count was incremented from 45 to 46
+      // Verify event sold count was incremented from 28 to 29
       const updatedEvent = await eventService.getEventById(availableEventId);
-      expect(updatedEvent?.soldTicketsCount).toBe(46);
+      expect(updatedEvent?.soldTicketsCount).toBe(29);
 
       // Verify ticket was saved in storage
       const savedTickets = await ticketService.getTickets();
       expect(savedTickets).toHaveLength(1);
       expect(savedTickets[0].ticketCode).toBe(ticket.ticketCode);
+    });
+
+    it('throws BookingValidationError when attempting to book a ticket for a past event', async () => {
+      // Event 1 is 'evt-tech-summit-2026' with date in October 2026 (past)
+      const pastEventId = 'evt-tech-summit-2026';
+
+      await expect(
+        ticketService.bookTicket({
+          eventId: pastEventId,
+          participantName: 'Late Booker',
+          participantEmail: 'late@techcorp.io',
+        })
+      ).rejects.toThrow(/already ended/i);
+    });
+
+    it('successfully cancels a ticket for an upcoming event and decrements sold count', async () => {
+      const availableEventId = 'evt-jazz-night-2026';
+      const ticket = await ticketService.bookTicket({
+        eventId: availableEventId,
+        participantName: 'Cancel Test User',
+        participantEmail: 'cancel@jazz.fm',
+      });
+
+      expect(ticket.status).toBe('VALID');
+      const eventBefore = await eventService.getEventById(availableEventId);
+      expect(eventBefore?.soldTicketsCount).toBe(29);
+
+      const cancelledTicket = await ticketService.cancelTicket(ticket.id);
+      expect(cancelledTicket.status).toBe('CANCELLED');
+
+      const eventAfter = await eventService.getEventById(availableEventId);
+      expect(eventAfter?.soldTicketsCount).toBe(28);
+    });
+
+    it('throws error when attempting to cancel a ticket for a past event', async () => {
+      // Temporarily update past event to book a ticket, then revert to past date
+      const pastEvent = await eventService.getEventById('evt-tech-summit-2026');
+      expect(pastEvent).toBeDefined();
+
+      // We can update date to future, book, then update back to past date
+      await eventService.updateEvent('evt-tech-summit-2026', {
+        date: '2026-11-20T10:00:00.000Z',
+      });
+      const ticket = await ticketService.bookTicket({
+        eventId: 'evt-tech-summit-2026',
+        participantName: 'Attendee',
+        participantEmail: 'attendee@techsummit.io',
+      });
+
+      // Now set date back to past
+      await eventService.updateEvent('evt-tech-summit-2026', {
+        date: '2026-10-18T09:00:00.000Z',
+      });
+
+      // Attempting cancellation must fail
+      await expect(
+        ticketService.cancelTicket(ticket.id)
+      ).rejects.toThrow(/already ended/i);
     });
 
     it('enforces capacity limit when last available tickets are purchased', async () => {
@@ -110,7 +168,7 @@ describe('ticketService', () => {
     it('throws BookingValidationError when participant name is empty or whitespace', async () => {
       await expect(
         ticketService.bookTicket({
-          eventId: 'evt-tech-summit-2026',
+          eventId: 'evt-jazz-night-2026',
           participantName: '   ',
           participantEmail: 'valid@example.com',
         })
@@ -120,7 +178,7 @@ describe('ticketService', () => {
     it('throws BookingValidationError when email is missing or has invalid format', async () => {
       await expect(
         ticketService.bookTicket({
-          eventId: 'evt-tech-summit-2026',
+          eventId: 'evt-jazz-night-2026',
           participantName: 'Valid Name',
           participantEmail: 'not-an-email',
         })

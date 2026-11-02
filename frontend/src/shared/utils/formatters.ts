@@ -63,3 +63,13 @@ export function fromDatetimeLocalValue(datetimeLocalString: string): string {
   if (isNaN(date.getTime())) return datetimeLocalString;
   return date.toISOString();
 }
+
+/**
+ * Checks if an event ISO date string represents a date/time in the past compared to now.
+ */
+export function isEventPast(isoDateString?: string | null): boolean {
+  if (!isoDateString) return false;
+  const eventTime = new Date(isoDateString).getTime();
+  if (isNaN(eventTime)) return false;
+  return eventTime < Date.now();
+}

@@ -67,5 +67,19 @@ export function translateBackendMessage(
     return t('backend_messages.already_cancelled');
   }
 
+  if (
+    (normalized.includes('cannot book') || normalized.includes('nem lehet jegyet foglalni')) &&
+    (normalized.includes('ended') || normalized.includes('past') || normalized.includes('lezárult'))
+  ) {
+    return t('backend_messages.event_ended_booking');
+  }
+
+  if (
+    (normalized.includes('cannot cancel') || normalized.includes('nem mondható le')) &&
+    (normalized.includes('ended') || normalized.includes('past') || normalized.includes('lezárult'))
+  ) {
+    return t('backend_messages.event_ended_cancellation');
+  }
+
   return rawMessage;
 }

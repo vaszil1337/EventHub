@@ -42,6 +42,18 @@ describe('errorTranslator', () => {
     expect(translateBackendMessage(raw, huTranslate)).toBe(hu.backend_messages.forbidden);
   });
 
+  it('translates cannot book past event error', () => {
+    const raw = 'Cannot book tickets for an event that has already ended.';
+    expect(translateBackendMessage(raw, enTranslate)).toBe(en.backend_messages.event_ended_booking);
+    expect(translateBackendMessage(raw, huTranslate)).toBe(hu.backend_messages.event_ended_booking);
+  });
+
+  it('translates cannot cancel past event ticket error', () => {
+    const raw = 'Cannot cancel a ticket for an event that has already ended.';
+    expect(translateBackendMessage(raw, enTranslate)).toBe(en.backend_messages.event_ended_cancellation);
+    expect(translateBackendMessage(raw, huTranslate)).toBe(hu.backend_messages.event_ended_cancellation);
+  });
+
   it('falls back to generic error when message is empty or null', () => {
     expect(translateBackendMessage('', enTranslate)).toBe(en.backend_messages.generic_error);
     expect(translateBackendMessage(null, huTranslate)).toBe(hu.backend_messages.generic_error);

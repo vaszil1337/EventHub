@@ -35,17 +35,22 @@ A perzisztencia a Hexagonális architektúra külső kimenő adaptere:
 infrastructure/persistence/
 ├── jpa/
 │   ├── EventJpaEntity.java              # JPA @Entity leképezés az events táblára
+│   ├── TicketTypeJpaEntity.java         # JPA @Entity leképezés a ticket_types táblára
 │   ├── TicketJpaEntity.java             # JPA @Entity leképezés a tickets táblára
+│   ├── UserJpaEntity.java               # JPA @Entity leképezés a users táblára
 │   ├── EventSpringDataRepository.java   # Spring Data JpaRepository<EventJpaEntity, String>
+│   ├── TicketTypeSpringDataRepository.java # Spring Data JpaRepository<TicketTypeJpaEntity, String>
 │   ├── TicketSpringDataRepository.java  # Spring Data JpaRepository<TicketJpaEntity, String>
+│   ├── UserSpringDataRepository.java    # Spring Data JpaRepository<UserJpaEntity, String>
 │   ├── EventPersistenceMapper.java      # Event <-> EventJpaEntity átalakítás
 │   ├── TicketPersistenceMapper.java     # Ticket <-> TicketJpaEntity átalakítás
+│   ├── UserPersistenceMapper.java       # User <-> UserJpaEntity átalakítás
 │   ├── JpaEventRepositoryAdapter.java   # EventRepository domain port megvalósítása
-│   └── JpaTicketRepositoryAdapter.java  # TicketRepository domain port megvalósítása
+│   ├── JpaTicketRepositoryAdapter.java  # TicketRepository domain port megvalósítása
+│   └── JpaUserRepositoryAdapter.java    # UserRepository domain port megvalósítása
 │
-├── InMemoryEventRepository.java         # Gyors in-memory implementáció
-├── InMemoryTicketRepository.java        # Gyors in-memory jegykezelés
-└── SampleEventData.java                 # 3 hivatalos mintaesemény
+├── DatabaseSeeder.java                  # Induláskori mintaadatok és demó felhasználók betöltése
+└── SampleEventData.java                 # 3 hivatalos kétnyelvű mintaesemény
 ```
 
 ### Adatbázis sémák és kapcsolatok

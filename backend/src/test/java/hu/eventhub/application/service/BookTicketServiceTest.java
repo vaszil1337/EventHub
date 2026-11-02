@@ -3,6 +3,7 @@ package hu.eventhub.application.service;
 import hu.eventhub.application.port.in.BookTicketCommand;
 import hu.eventhub.domain.exception.CapacityExceededException;
 import hu.eventhub.domain.exception.EventNotFoundException;
+import hu.eventhub.domain.exception.InvalidBookingException;
 import hu.eventhub.domain.model.*;
 import hu.eventhub.infrastructure.notification.SmtpEmailNotificationAdapter;
 import hu.eventhub.infrastructure.persistence.SampleEventData;
@@ -76,7 +77,7 @@ class BookTicketServiceTest {
                 fixedClock,
                 emailNotificationAdapter
         );
-        cancelTicketService = new CancelTicketService(eventRepository, ticketRepository);
+        cancelTicketService = new CancelTicketService(eventRepository, ticketRepository, fixedClock);
     }
 
     @Test
@@ -195,5 +196,58 @@ class BookTicketServiceTest {
                 EventNotFoundException.class,
                 () -> bookTicketService.bookTicket(command)
         );
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidBookingException when attempting to book a ticket for a past event")
+    void shouldThrowWhenBookingPastEvent() {
+        // Tech summit is at 2026-10-18T09:00:00Z. Set clock after event:
+        Clock pastClock = Clock.fixed(Instant.parse("2026-10-19T12:00:00Z"), ZoneOffset.UTC);
+        BookTicketService pastBookService = new BookTicketService(
+                eventRepository,
+                ticketRepository,
+                () -> TicketCode.of("EVT-TEST"),
+                pastClock,
+                emailNotificationAdapter
+        );
+
+        BookTicketCommand command = new BookTicketCommand(
+                "evt-tech-summit-2026",
+                "Late Attendee",
+                "late@example.com"
+        );
+
+        InvalidBookingException ex = assertThrows(
+                InvalidBookingException.class,
+                () -> pastBookService.bookTicket(command)
+        );
+
+        assertTrue(ex.getMessage().contains("already ended"));
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidBookingException when attempting to cancel a ticket for a past event")
+    void shouldThrowWhenCancellingTicketForPastEvent() {
+        // First book a ticket when the event is still upcoming (clock at 2026-10-13)
+        BookTicketCommand command = new BookTicketCommand(
+                "evt-tech-summit-2026",
+                "Early Attendee",
+                "early@example.com"
+        );
+        Ticket booked = bookTicketService.bookTicket(command);
+
+        // Now move clock to after the event (2026-10-19)
+        Clock pastClock = Clock.fixed(Instant.parse("2026-10-19T12:00:00Z"), ZoneOffset.UTC);
+        CancelTicketService pastCancelService = new CancelTicketService(eventRepository, ticketRepository, pastClock);
+
+        InvalidBookingException ex = assertThrows(
+                InvalidBookingException.class,
+                () -> pastCancelService.cancelTicket(booked.getId())
+        );
+
+        assertTrue(ex.getMessage().contains("already ended"));
+        // Ensure ticket was not cancelled
+        Ticket ticketInDb = ticketRepository.findById(booked.getId()).orElseThrow();
+        assertEquals(TicketStatus.VALID, ticketInDb.getStatus());
     }
 }

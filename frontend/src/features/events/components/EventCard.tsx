@@ -17,7 +17,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 import { Event } from '@/features/events/types';
 import { CapacityBadge } from './CapacityBadge';
-import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { formatMoney, formatEventDate, isEventPast } from '@/shared/utils/formatters';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
@@ -33,6 +33,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
   const { locale, t } = useTranslation();
   const isOrganizer = user?.role === 'ORGANIZER';
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
+  const isPast = isEventPast(event.date);
   const displayTitle = getLocalizedEventTitle(event, locale);
   const displayDescription = getLocalizedEventDescription(event, locale);
 
@@ -50,6 +51,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
         border: '1px solid',
         borderColor: isSoldOut ? 'error.main' : 'divider',
         borderRadius: '12px',
+        opacity: isPast ? 0.88 : 1,
         transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         '&:hover': {
           borderColor: isSoldOut ? 'error.main' : 'text.secondary',
@@ -69,13 +71,21 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
               height: '100%',
               width: '100%',
               objectFit: 'cover',
-              filter: isSoldOut ? 'grayscale(30%) brightness(0.95)' : 'none',
+              filter: isPast
+                ? 'grayscale(45%) brightness(0.9)'
+                : isSoldOut
+                ? 'grayscale(30%) brightness(0.95)'
+                : 'none',
               transition: 'transform 0.4s ease, filter 0.3s ease',
               '&:hover': {
                 transform: 'scale(1.03)',
               },
               ...theme.applyStyles('dark', {
-                filter: isSoldOut ? 'grayscale(30%) brightness(0.85)' : 'brightness(0.9)',
+                filter: isPast
+                  ? 'grayscale(45%) brightness(0.8)'
+                  : isSoldOut
+                  ? 'grayscale(30%) brightness(0.85)'
+                  : 'brightness(0.9)',
               }),
             })}
           />
@@ -105,20 +115,40 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
       )}
 
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5, pb: 1.5 }}>
-        {/* Date */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary', mb: 1 }}>
-          <CalendarTodayOutlinedIcon sx={{ fontSize: '0.85rem' }} />
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              letterSpacing: '0.03em',
-              textTransform: 'uppercase',
-              color: 'text.secondary',
-            }}
-          >
-            {formatEventDate(event.date, locale)}
-          </Typography>
+        {/* Date & Past badge */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: isPast ? 'text.disabled' : 'text.secondary' }}>
+            <CalendarTodayOutlinedIcon sx={{ fontSize: '0.85rem' }} />
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                letterSpacing: '0.03em',
+                textTransform: 'uppercase',
+                color: isPast ? 'text.disabled' : 'text.secondary',
+              }}
+            >
+              {formatEventDate(event.date, locale)}
+            </Typography>
+          </Box>
+          {isPast && (
+            <Box
+              data-testid="past-event-badge"
+              sx={{
+                px: 1,
+                py: 0.2,
+                borderRadius: '4px',
+                bgcolor: 'action.disabledBackground',
+                color: 'text.secondary',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {t('events.pastEvent')}
+            </Box>
+          )}
         </Box>
 
         {/* Title */}
@@ -256,6 +286,24 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onBookTicket, onEdi
             }}
           >
             {t('events.editEvent')}
+          </Button>
+        ) : isPast ? (
+          <Button
+            fullWidth
+            variant="contained"
+            disabled
+            data-testid={`book-button-${event.id}`}
+            startIcon={<BlockOutlinedIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              py: 0.85,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              borderRadius: '8px',
+              bgcolor: 'action.disabledBackground',
+              color: 'text.disabled',
+            }}
+          >
+            {t('events.eventEnded')}
           </Button>
         ) : (
           <Button

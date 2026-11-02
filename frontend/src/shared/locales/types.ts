@@ -90,6 +90,9 @@ export interface TranslationDictionary {
     soldOut: string;
     soldOutCapacityLimit: string;
     soldOutCapacityReached: string;
+    pastEvent: string;
+    eventEnded: string;
+    cannotBookPastEvent: string;
     bookTicket: string;
     bookTicketNow: string;
     editEvent: string;
@@ -237,6 +240,8 @@ export interface TranslationDictionary {
     thActions: string;
     cancelTicket: string;
     cancelBookingButton: string;
+    cannotCancelPastEvent: string;
+    eventEnded: string;
     cancelConfirm: string;
     cancelling: string;
     noTicketsFound: string;
@@ -258,6 +263,8 @@ export interface TranslationDictionary {
     forbidden: string;
     event_not_found: string;
     already_cancelled: string;
+    event_ended_booking: string;
+    event_ended_cancellation: string;
     generic_error: string;
   };
 }

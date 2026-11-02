@@ -43,6 +43,12 @@ describe('App End-to-End Component Flow with React Router', () => {
     expect(
       screen.getByRole('button', { name: /Sold Out \(Capacity Limit\)/i })
     ).toBeInTheDocument();
+
+    // Past event card has "Event Ended" disabled button and "Past Event" badge
+    const pastButton = screen.getByTestId('book-button-evt-tech-summit-2026');
+    expect(pastButton).toBeDisabled();
+    expect(pastButton).toHaveTextContent(/Event Ended/i);
+    expect(screen.getByTestId('past-event-badge')).toBeInTheDocument();
   });
 
   it('filters events using search bar', async () => {
@@ -66,15 +72,15 @@ describe('App End-to-End Component Flow with React Router', () => {
     renderApp();
 
     await waitFor(() => {
-      expect(screen.getByText('Tech Horizons Summit 2026')).toBeInTheDocument();
+      expect(screen.getByText('Smooth Jazz & Soul Evening')).toBeInTheDocument();
     });
 
-    // Initial seat count: 45 / 100
+    // Initial seat count: 28 / 30
     const initialCapacityTexts = screen.getAllByTestId('capacity-text');
-    expect(initialCapacityTexts.some((el) => el.textContent?.includes('45 / 100 seats taken'))).toBe(true);
+    expect(initialCapacityTexts.some((el) => el.textContent?.includes('28 / 30 seats taken'))).toBe(true);
 
-    // Click "Book Ticket" on Tech Horizons Summit
-    const bookButton = screen.getByTestId('book-button-evt-tech-summit-2026');
+    // Click "Book Ticket" on the available upcoming event
+    const bookButton = screen.getByTestId('book-button-evt-jazz-night-2026');
     await user.click(bookButton);
 
     // Dialog opens
@@ -96,10 +102,10 @@ describe('App End-to-End Component Flow with React Router', () => {
     // Close the dialog
     await user.click(screen.getByRole('button', { name: /Done/i }));
 
-    // Seat count should now be 46 / 100 on the card!
+    // Seat count should now be 29 / 30 on the card!
     await waitFor(() => {
       const updatedCapacityTexts = screen.getAllByTestId('capacity-text');
-      expect(updatedCapacityTexts.some((el) => el.textContent?.includes('46 / 100 seats taken'))).toBe(true);
+      expect(updatedCapacityTexts.some((el) => el.textContent?.includes('29 / 30 seats taken'))).toBe(true);
     });
 
     // Total tickets count in Navbar should show "1" badge

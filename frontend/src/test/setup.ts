@@ -230,6 +230,18 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
       );
     }
 
+    if (new Date(event.date).getTime() < Date.now()) {
+      return new Response(
+        JSON.stringify({
+          status: 400,
+          error: 'Bad Request',
+          message: 'Cannot book tickets for an event that has already ended.',
+          timestamp: new Date().toISOString(),
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (event.soldTicketsCount >= event.venue.capacity) {
       return new Response(
         JSON.stringify({
@@ -274,8 +286,21 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
     if (!ticket) {
       return new Response(JSON.stringify({ status: 404, message: 'Ticket not found' }), { status: 404 });
     }
-    ticket.status = 'CANCELLED';
+
     const event = mockEvents.find((e) => e.id === ticket.eventId);
+    if (event && new Date(event.date).getTime() < Date.now()) {
+      return new Response(
+        JSON.stringify({
+          status: 400,
+          error: 'Bad Request',
+          message: 'Cannot cancel a ticket for an event that has already ended.',
+          timestamp: new Date().toISOString(),
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    ticket.status = 'CANCELLED';
     if (event && event.soldTicketsCount > 0) {
       event.soldTicketsCount -= 1;
     }

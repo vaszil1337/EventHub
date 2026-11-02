@@ -68,8 +68,9 @@ public class EventHubUseCaseConfiguration {
     CancelTicketUseCase cancelTicketUseCase(
             EventRepository eventRepository,
             TicketRepository ticketRepository,
+            Clock clock,
             ObjectProvider<PlatformTransactionManager> transactionManagerProvider) {
-        CancelTicketService service = new CancelTicketService(eventRepository, ticketRepository);
+        CancelTicketService service = new CancelTicketService(eventRepository, ticketRepository, clock);
         PlatformTransactionManager transactionManager = transactionManagerProvider.getIfAvailable();
         if (transactionManager == null) {
             return service;

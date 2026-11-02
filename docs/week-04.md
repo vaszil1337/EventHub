@@ -62,9 +62,34 @@ A 4. hét célja a tantárgyi követelménytáblázatban rögzített összes **E
      - Az események borítóképein (`EventCard.tsx`, `EventDetailPage.tsx`) `theme.applyStyles('dark', { filter: 'brightness(0.9)' })` szűrő fut le, így éjszaka vagy sötét környezetben a képek fehérebb részei sem vakítják a felhasználót.
    - **Auth Modal Feliratok Javítása**:
      - Az `AuthDialog.tsx` komponensben optimalizálásra került a belső térköz (`pt: 1.5`, `pt: 1`), így a kitöltött input mezők felugró (`shrink`) címkéi (`Email address`, `Password`) többé nem vágódnak le felül a görgethető dialógusban.
+8. **Esemény Létrehozás / Szerkesztés UX Finomhangolás & Kártyaszélesség Javítás**:
+   - **Natív Dátum- és Időválasztó (`type="datetime-local"`)**:
+     - Az `OrganizerEventDialog.tsx` és az `EditEventDialog.tsx` komponensekben a nyers ISO szövegmezőt felhasználóbarát böngésző natív naptár- és időválasztó váltotta fel (`toDatetimeLocalValue` és `fromDatetimeLocalValue` konverterekkel a `formatters.ts`-ben).
+   - **Lokalizált Kategóriaválasztó (`Select` Dropdown)**:
+     - Szabad szöveges bevitel helyett kétnyelvű legördülő választó (`Technology` / `Technológia`, `Music` / `Zene`, `Workshop`, `Conference` / `Konferencia`, `General` / `Általános`), amely a kiválasztott nyelven jeleníti meg az opciókat, miközben a kanonikus kulcsot tárolja.
+   - **Opcionális Borítókép URL & Egységes Kártyaszélesség**:
+     - Az esemény létrehozásakor a borítókép URL megadása opcionális (üresen hagyva kurált alapértelmezett konferenciaképet kap).
+     - Az `EventCard.tsx` `width: '100%'` szabállyal kitölti a CSS Grid cellákat rövid leírások esetén is.
+9. **Frontend Architekturális Refaktorálás (`App.tsx` Modularizáció)**:
+   - Az `App.tsx` (korábban 291 soros monolitikus állapotkezelő) 36 soros, tiszta Provider- és Router-kompozícióvá alakult.
+   - **Új dedikált Contextek és Layout**:
+     - `NotificationContext.tsx`: Globális snackbar értesítések (`notify(message, severity)`).
+     - `ModalContext.tsx`: Modális ablakok (`AuthDialog`, `OrganizerEventDialog`, `EditEventDialog`, `BookingDialog`) állapotvezérlése.
+     - `TicketContext.tsx`: Navbar jegyszámláló szinkronizálása a szerverrel.
+     - `EventsContext.tsx`: Eseménylista, keresés, kategóriaszűrés és demo reset globális kontextusa.
+     - `MainLayout.tsx`: A navigációs sávot, az oldal-útvonalakat (`<Outlet />`) és a globális dialógusokat összefogó keretkomponens.
+10. **Múltbeli (Lezárult) Események Kezelése & Jegylemondási Korlátozás**:
+    - **Backend Üzleti Szabályok (`BookTicketService` & `CancelTicketService`)**:
+      - A `BookTicketService` ellenőrzi az esemény időpontját (`event.getDate().isBefore(clock.instant())`), és múltbeli esemény esetén `InvalidBookingException`-t dob (HTTP `400 Bad Request`).
+      - A `CancelTicketService` `Clock` alapú ellenőrzéssel megakadályozza a már lezajlott eseményekre szóló jegyek utólagos lemondását (`InvalidBookingException`).
+    - **Frontend Megjelenítés & Védelem**:
+      - `isEventPast()` segédfüggvény a `formatters.ts`-ben.
+      - Az `EventCard.tsx` és `EventDetailPage.tsx` komponensekben a múltbeli események `Lezárult` / `Past Event` jelvényt kapnak, a foglalási gomb pedig inaktívvá válik (`Esemény véget ért` / `Event Ended`).
+      - A `TicketsPage.tsx` résztvevői kártyáin és szervezői táblázatában a lezárult eseményekhez tartozó jegyek lemondási gombja letiltásra kerül magyarázó tooltippel (*„Már lezárult eseményre szóló jegy nem mondható le.”*).
+      - Az `errorTranslator.ts`, `en.ts` és `hu.ts` teljes körűen lokalizálja a kapcsolódó üzeneteket.
 
 ---
 
 ## 2. Tesztelési Eredmények
-- **Backend (`mvn test`)**: 49/49 teszt sikeres (beleértve a dinamikus surge árazást, esemény módosítást, a kétnyelvű cím/leírás mentést és validációt, a jegylemondást és kapacitás-felszabadítást, a `403 Forbidden` szerepkör-védelmet, a Mailpit/JavaMailSender HTML levélküldést magyar és angol nyelven, valamint a hibatűrő fallbacket).
-- **Frontend (`npm run test:run` & `npm run build`)**: 62/62 Vitest teszt sikeres 13 tesztfájlban (beleértve az új `SettingsDropdown.test.tsx` 4 tesztjét, az `eventLocalization.test.ts` 15 tesztjét, az `I18nContext.test.tsx` és `AuthDialog.test.tsx` teszteket), a TypeScript és Vite produkciós build 0 hibával lefordul.
+- **Backend (`mvn test`)**: **51/51 teszt sikeres** (11 tesztosztályban: beleértve a dinamikus surge árazást, esemény létrehozást és módosítást, a kétnyelvű cím/leírás mentést és validációt, a jegylemondást és kapacitás-felszabadítást, a múltbeli eseményekre történő foglalás és jegylemondás tiltását, a `403 Forbidden` szerepkör-védelmet, valamint a Mailpit/JavaMailSender HTML levélküldést magyar és angol nyelven hibatűrő fallbackkel).
+- **Frontend (`npm run test:run` & `npm run build`)**: **71/71 Vitest teszt sikeres** 14 tesztfájlban (`App.test.tsx`, `ticketService.test.ts`, `BookingDialog.test.tsx`, `OrganizerEventDialog.test.tsx`, `EditEventDialog.test.tsx`, `TicketsPage.test.tsx`, `AuthDialog.test.tsx`, `AuthContext.test.tsx`, `authService.test.ts`, `SettingsDropdown.test.tsx`, `LanguageSwitcher.test.tsx`, `I18nContext.test.tsx`, `eventLocalization.test.ts`, `errorTranslator.test.ts`), a TypeScript és Vite produkciós build 0 hibával lefordul.

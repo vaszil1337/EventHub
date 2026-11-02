@@ -19,7 +19,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Event } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 import { CapacityBadge } from '@/features/events/components/CapacityBadge';
-import { formatMoney, formatEventDate } from '@/shared/utils/formatters';
+import { formatMoney, formatEventDate, isEventPast } from '@/shared/utils/formatters';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle, getLocalizedEventDescription } from '@/shared/utils/eventLocalization';
@@ -123,6 +123,7 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
   }
 
   const isSoldOut = event.soldTicketsCount >= event.venue.capacity;
+  const isPast = isEventPast(event.date);
 
   return (
     <Container maxWidth="md" sx={{ py: 5 }}>
@@ -198,6 +199,25 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                 {formatEventDate(event.date, locale)}
               </Typography>
             </Box>
+
+            {isPast && (
+              <Box
+                data-testid="past-event-badge"
+                sx={{
+                  px: 1.25,
+                  py: 0.35,
+                  borderRadius: '6px',
+                  bgcolor: 'action.disabledBackground',
+                  color: 'text.secondary',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {t('events.pastEvent')}
+              </Box>
+            )}
           </Box>
 
           {/* Title */}
@@ -303,6 +323,24 @@ export const EventDetailPage: React.FC<EventDetailPageProps> = ({
                 }}
               >
                 {t('events.editEvent')}
+              </Button>
+            ) : isPast ? (
+              <Button
+                variant="contained"
+                size="large"
+                disabled
+                data-testid="detail-book-button"
+                startIcon={<BlockOutlinedIcon />}
+                sx={{
+                  py: 1.5,
+                  px: 4,
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  bgcolor: 'action.disabledBackground',
+                  color: 'text.disabled',
+                }}
+              >
+                {t('events.eventEnded')}
               </Button>
             ) : (
               <Button

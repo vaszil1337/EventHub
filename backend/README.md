@@ -5,18 +5,20 @@ Ez a modul az **EventHub** backend szolgáltatása, amely a **Hexagonális Archi
 ---
 
 ## 🎯 Alkalmazott Technológiai Stack
-- **Framework**: Spring Boot 3.x / 4.x
+- **Framework**: Spring Boot 3.4 / 4.x
 - **Language**: Java 21 LTS
 - **Build Tool**: Maven (`pom.xml`) & Gradle (`build.gradle`)
-- **Database**: **KIZÁRÓLAG PostgreSQL** (minden környezetben és minden esetben kizárólag a PostgreSQL az adatbázis)
-- **Database Migrations**: Flyway SQL migrációk (`src/main/resources/db/migration/`)
-- **Architectural Paradigm**: Hexagonal Architecture (Ports & Adapters)
+- **Security**: Spring Security + HS256 JWT (`HmacJwtTokenProviderAdapter`) + BCrypt (`BCryptPasswordHasherAdapter`)
+- **Database**: **KIZÁRÓLAG PostgreSQL** (minden környezetben és minden esetben kizárólag a PostgreSQL 16 az adatbázis)
+- **Database Migrations**: Flyway SQL migrációk (`src/main/resources/db/migration/`, `V1` – `V4`)
+- **Email Gateway**: Spring Mail (`JavaMailSender`) + Mailpit SMTP (`EmailNotificationPort`)
+- **Architectural Paradigm**: Hexagonal Architecture (Ports & Adapters) & DDD
 
 ---
 
 ## 🏛️ Megvalósított Hexagonális Csomagszerkezet
 
-```
+```text
 backend/
 ├── pom.xml
 ├── build.gradle
@@ -27,46 +29,85 @@ backend/
     │   │   │
     │   │   ├── domain/                                  # 1. BELSŐ DOMAIN MAG (Pure Java, 0 keretrendszer függőség)
     │   │   │   ├── exception/
-    │   │   │   │   ├── CapacityExceededException.java   # Kapacitáskorlát átlépése
-    │   │   │   │   ├── EventNotFoundException.java      # Esemény nem található
-    │   │   │   │   └── InvalidBookingException.java     # Érvénytelen foglalási adatok
+    │   │   │   │   ├── AccessDeniedException.java       # Jogosultság hiánya (403 Forbidden)
+    │   │   │   │   ├── AuthenticationException.java     # Sikertelen autentikáció (401 Unauthorized)
+    │   │   │   │   ├── CapacityExceededException.java   # Kapacitáskorlát átlépése (409 Conflict)
+    │   │   │   │   ├── EmailDeliveryException.java      # Külső e-mail szolgáltató hiba
+    │   │   │   │   ├── EventNotFoundException.java      # Esemény nem található (404 Not Found)
+    │   │   │   │   ├── InvalidBookingException.java     # Érvénytelen foglalás / lezárult esemény (400 Bad Request)
+    │   │   │   │   ├── TicketNotFoundException.java     # Jegy nem található (404 Not Found)
+    │   │   │   │   └── UserAlreadyExistsException.java  # Már regisztrált e-mail cím (409 Conflict)
     │   │   │   │
     │   │   │   └── model/
-    │   │   │       ├── Money.java                       # Value Object: amount, currency
-    │   │   │       ├── VenueId.java                     # Value Object: helyszín azonosító
-    │   │   │       ├── Venue.java                       # Domain modell: név, cím, kapacitás
+    │   │   │       ├── Capacity.java                    # Value Object: maxSeats, soldSeats, foglaltsági arány
+    │   │   │       ├── EmailDeliveryStatus.java         # Enum: SENT, FAILED_PENDING_RETRY
+    │   │   │       ├── Event.java                       # Aggregate Root: kétnyelvű adatok, kapacitás- és jegytípus-kezelés
     │   │   │       ├── EventId.java                     # Value Object: esemény azonosító
-    │   │   │       ├── Event.java                       # Aggregate Root: kapacitás- és jegykezelés
+    │   │   │       ├── EventRepository.java             # Kimenő port interfész eseményekhez
     │   │   │       ├── EventSnapshot.java               # Immutábilis állapot pillanatkép
-    │   │   │       ├── TicketId.java                    # Value Object: jegy azonosító
+    │   │   │       ├── Money.java                       # Value Object: BigDecimal amount, String currency
+    │   │   │       ├── PricingRule.java                 # Enum & árazási stratégia (EARLY_BIRD, STANDARD, DYNAMIC_SURGE, VIP, FIXED)
+    │   │   │       ├── Ticket.java                      # Domain entitás (jegy állapota, lemondás, e-mail státusz)
     │   │   │       ├── TicketCode.java                  # Value Object: EVT-YYYY-XXXX formátum
-    │   │   │       ├── Ticket.java                      # Domain entitás
-    │   │   │       ├── TicketSnapshot.java              # Jegy állapot pillanatkép
-    │   │   │       ├── EventRepository.java             # Kimenő port interfész
-    │   │   │       ├── TicketRepository.java            # Kimenő port interfész
-    │   │   │       └── TicketCodeGenerator.java         # Kimenő port interfész
+    │   │   │       ├── TicketCodeGenerator.java         # Kimenő port interfész kódgeneráláshoz
+    │   │   │       ├── TicketId.java                    # Value Object: jegy azonosító
+    │   │   │       ├── TicketRepository.java            # Kimenő port interfész jegyekhez
+    │   │   │       ├── TicketSnapshot.java              # Immutábilis jegy pillanatkép
+    │   │   │       ├── TicketStatus.java                # Enum: VALID, CANCELLED
+    │   │   │       ├── TicketType.java                  # Domain entitás: jegykategória kvóta és dinamikus ár
+    │   │   │       ├── TicketTypeId.java                # Value Object: jegytípus azonosító
+    │   │   │       ├── User.java                        # Domain entitás: felhasználó és szerepkör
+    │   │   │       ├── UserId.java                      # Value Object: felhasználó azonosító
+    │   │   │       ├── UserRepository.java              # Kimenő port interfész felhasználókhoz
+    │   │   │       ├── UserRole.java                    # Enum: ORGANIZER, PARTICIPANT
+    │   │   │       ├── Venue.java                       # Domain modell: helyszín név, cím, kapacitás
+    │   │   │       └── VenueId.java                     # Value Object: helyszín azonosító
     │   │   │
     │   │   ├── application/                             # 2. HASZNÁLATI ESETEK (Use Cases & Application Services)
     │   │   │   ├── port/
-    │   │   │   │   └── in/
-    │   │   │   │       ├── BookTicketUseCase.java       # Jegyfoglalás bemenő port
-    │   │   │   │       ├── BookTicketCommand.java       # Jegyfoglalás parancs
-    │   │   │   │       ├── GetEventsUseCase.java        # Események lekérése
-    │   │   │   │       ├── GetEventByIdUseCase.java     # Egyedi esemény lekérése
-    │   │   │   │       ├── GetTicketsUseCase.java       # Jegyek lekérése
-    │   │   │   │       └── ResetEventsUseCase.java      # Mintaadatok visszaállítása
+    │   │   │   │   ├── in/
+    │   │   │   │   │   ├── AddTicketTypeCommand.java
+    │   │   │   │   │   ├── AddTicketTypeUseCase.java
+    │   │   │   │   │   ├── AuthResult.java
+    │   │   │   │   │   ├── AuthUseCase.java
+    │   │   │   │   │   ├── BookTicketCommand.java
+    │   │   │   │   │   ├── BookTicketUseCase.java
+    │   │   │   │   │   ├── CancelTicketUseCase.java
+    │   │   │   │   │   ├── CreateEventCommand.java
+    │   │   │   │   │   ├── CreateEventUseCase.java
+    │   │   │   │   │   ├── GetEventByIdUseCase.java
+    │   │   │   │   │   ├── GetEventsUseCase.java
+    │   │   │   │   │   ├── GetTicketsUseCase.java
+    │   │   │   │   │   ├── LoginUserCommand.java
+    │   │   │   │   │   ├── RegisterUserCommand.java
+    │   │   │   │   │   ├── ResetEventsUseCase.java
+    │   │   │   │   │   ├── UpdateEventCommand.java
+    │   │   │   │   │   └── UpdateEventUseCase.java
+    │   │   │   │   └── out/
+    │   │   │   │       ├── AuthenticatedPrincipal.java
+    │   │   │   │       ├── EmailNotificationPort.java
+    │   │   │   │       ├── PasswordHasherPort.java
+    │   │   │   │       └── TokenProviderPort.java
     │   │   │   │
     │   │   │   └── service/                             # Pure POJO implementációk
-    │   │   │       ├── BookTicketService.java
+    │   │   │       ├── AddTicketTypeService.java
+    │   │   │       ├── AuthService.java
+    │   │   │       ├── BookTicketService.java           # Foglalás, múltbeli esemény ellenőrzés, dinamikus ár & e-mail
+    │   │   │       ├── CancelTicketService.java         # Lemondás, múltbeli esemény tiltás & kapacitás felszabadítás
+    │   │   │       ├── CreateEventService.java          # Esemény létrehozása starter jegytípusokkal
     │   │   │       ├── GetEventsService.java
     │   │   │       ├── GetTicketsService.java
-    │   │   │       └── ResetEventsService.java
+    │   │   │       ├── ResetEventsService.java
+    │   │   │       └── UpdateEventService.java          # Esemény módosítása kapacitás-invariáns védelemmel
     │   │   │
-    │   │   └── infrastructure/                          # 3. KÜLSŐ ADAPTEREK (Framework, Web, Persistence)
+    │   │   └── infrastructure/                          # 3. KÜLSŐ ADAPTEREK (Framework, Web, Persistence, Security, Mail)
     │   │       ├── configuration/
-    │   │       │   ├── EventHubUseCaseConfiguration.java # TransactionTemplate & Bean konfiguráció
-    │   │       │   ├── DefaultTicketCodeGenerator.java   # Kódgenerátor megvalósítás
+    │   │       │   ├── DefaultTicketCodeGenerator.java  # Kódgenerátor megvalósítás
+    │   │       │   ├── EventHubUseCaseConfiguration.java# TransactionTemplate & UseCase Bean konfiguráció
     │   │       │   └── WebCorsConfiguration.java        # CORS beállítás (localhost:5173 engedélyezése)
+    │   │       │
+    │   │       ├── notification/
+    │   │       │   └── SmtpEmailNotificationAdapter.java# Kétnyelvű (HU/EN) HTML + Plain Text SMTP e-mail küldő
     │   │       │
     │   │       ├── persistence/                         # Kimenő PostgreSQL perzisztencia adapterek
     │   │       │   ├── jpa/
@@ -88,31 +129,57 @@ backend/
     │   │       │   ├── DatabaseSeeder.java
     │   │       │   └── SampleEventData.java
     │   │       │
-    │   │       └── presentation/web/                    # Bemenő REST Adapter
-    │   │           ├── ApiErrorResponse.java
-    │   │           ├── BookingRequest.java
-    │   │           ├── EventResponse.java
-    │   │           ├── VenueResponse.java
-    │   │           ├── PriceResponse.java
-    │   │           ├── TicketResponse.java
-    │   │           ├── EventController.java
-    │   │           ├── TicketController.java
-    │   │           ├── EventHubExceptionHandler.java
-    │   │           ├── EventResponseMapper.java
-    │   │           └── TicketResponseMapper.java
+    │   │       ├── presentation/web/                    # Bemenő REST Adapter
+    │   │       │   ├── AddTicketTypeRequest.java
+    │   │       │   ├── ApiErrorResponse.java
+    │   │       │   ├── AuthController.java
+    │   │       │   ├── AuthResponse.java
+    │   │       │   ├── BookingRequest.java
+    │   │       │   ├── CreateEventRequest.java
+    │   │       │   ├── EventController.java
+    │   │       │   ├── EventHubExceptionHandler.java
+    │   │       │   ├── EventResponse.java
+    │   │       │   ├── EventResponseMapper.java
+    │   │       │   ├── LoginRequest.java
+    │   │       │   ├── PriceResponse.java
+    │   │       │   ├── RegisterRequest.java
+    │   │       │   ├── TicketController.java
+    │   │       │   ├── TicketResponse.java
+    │   │       │   ├── TicketResponseMapper.java
+    │   │       │   ├── TicketTypeResponse.java
+    │   │       │   ├── UpdateEventRequest.java
+    │   │       │   ├── UserResponse.java
+    │   │       │   └── VenueResponse.java
+    │   │       │
+    │   │       └── security/                            # Spring Security & JWT Adapter
+    │   │           ├── BCryptPasswordHasherAdapter.java
+    │   │           ├── HmacJwtTokenProviderAdapter.java
+    │   │           ├── JwtAuthenticationFilter.java
+    │   │           └── SecurityConfiguration.java
     │   │
     │   └── resources/
     │       ├── application.properties
-    │       └── db/migration/                            # Verziózott SQL migrációk
+    │       └── db/migration/                            # Verziózott Flyway SQL migrációk
     │           ├── V1__create_venues_and_events.sql
     │           ├── V2__create_tickets.sql
-    │           └── V3__seed_initial_events.sql
+    │           ├── V3__seed_initial_events.sql
+    │           └── V4__add_bilingual_event_fields.sql
     │
-    └── test/java/hu/eventhub/
-        ├── domain/model/EventCapacityTest.java
-        ├── domain/model/TicketCodeTest.java
-        ├── application/service/BookTicketServiceTest.java
-        └── infrastructure/presentation/web/EventControllerIntegrationTest.java
+    └── test/java/hu/eventhub/                           # 51 / 51 PASS (11 tesztosztály)
+        ├── domain/model/
+        │   ├── CapacityValueObjectTest.java
+        │   ├── EventCapacityTest.java
+        │   ├── PricingRuleTest.java
+        │   └── TicketCodeTest.java
+        ├── application/service/
+        │   ├── AddTicketTypeServiceTest.java
+        │   ├── AuthServiceTest.java
+        │   ├── BookTicketServiceTest.java
+        │   ├── CreateEventServiceTest.java
+        │   └── UpdateEventServiceTest.java
+        └── infrastructure/
+            ├── notification/SmtpEmailNotificationAdapterTest.java
+            └── presentation/web/EventControllerIntegrationTest.java
 ```
 
 ---
@@ -157,14 +224,14 @@ mvn spring-boot:run
 ---
 
 ## 📬 E-mail Értesítések Megtekintése (Mailpit)
-Amikor egy látogató vagy felhasználó jegyet foglal a felületen (`POST /api/tickets/book`), az alkalmazás a **Hexagonális Architektúra** elveit követve az `EmailNotificationPort` kimenő porton és az `SmtpEmailNotificationAdapter`-en keresztül valós SMTP levelet küld a helyi Mailpit szerverre.
+Amikor egy látogató vagy felhasználó jegyet foglal a felületen (`POST /api/tickets/book`), az alkalmazás a **Hexagonális Architektúra** elveit követve az `EmailNotificationPort` kimenő porton és az `SmtpEmailNotificationAdapter`-en keresztül valós SMTP levelet küld a helyi Mailpit szerverre a választott nyelven (`hu` vagy `en`).
 
 1. Nyisd meg a böngésződben: **`http://localhost:8025`**
 2. Vásárolj egy jegyet a weboldalon (vendégként vagy bejelentkezve)
 3. A Mailpit webes postaládájában azonnal megjelenik a beérkezett visszaigazolás:
-   - Reszponzív HTML dizájn EventHub arculattal
+   - Reszponzív HTML dizájn EventHub arculattal (magyar vagy angol nyelven)
    - Esemény címe, időpontja, helyszíne
-   - Kiválasztott jegytípus és ár
+   - Kiválasztott jegytípus és dinamikusan kalkulált ár
    - Kiemelt, másolható **egyedi jegykód (`EVT-YYYY-XXXX`)**
    - Plain Text alternatíva egyszerű levelezőkliensekhez
    - Reziliens hibatűrés: ha az e-mail szolgáltatás elérhetetlen, a jegy `FAILED_PENDING_RETRY` státusszal mentődik el a tranzakció elvesztése nélkül
@@ -178,13 +245,13 @@ Amikor egy látogató vagy felhasználó jegyet foglal a felületen (`POST /api/
 | `POST` | `/api/auth/register` | Felhasználó regisztráció + HS256 JWT token kiadás | `201 Created` | `409 Conflict`, `400 Bad Request` |
 | `POST` | `/api/auth/login` | Bejelentkezés + HS256 JWT token kiadás | `200 OK` | `401 Unauthorized` |
 | `GET` | `/api/auth/me` | Aktuális bejelentkezett profil (`Authorization: Bearer <jwt>`) | `200 OK` | `401 Unauthorized` |
-| `GET` | `/api/events` | Összes esemény listázása (jegytípusokkal és dinamikus árakkal) | `200 OK` | - |
+| `GET` | `/api/events` | Összes esemény listázása (kétnyelvű adatokkal, jegytípusokkal és dinamikus árakkal) | `200 OK` | - |
 | `GET` | `/api/events/{id}` | Egyedi esemény lekérése | `200 OK` | `404 Not Found` |
 | `PUT` | `/api/events/{id}` | Esemény adatainak szerkesztése (`ORGANIZER` JWT token kötelező) | `200 OK` | `403 Forbidden`, `404 Not Found`, `400 Bad Request` |
 | `POST` | `/api/events` | Új esemény létrehozása (`ORGANIZER` JWT token kötelező) | `201 Created` | `403 Forbidden`, `400 Bad Request` |
 | `POST` | `/api/events/{id}/ticket-types` | Új jegytípus hozzáadása eseményhez (`ORGANIZER` JWT token) | `201 Created` | `403 Forbidden`, `404 Not Found` |
 | `POST` | `/api/events/reset` | Események és jegyek alaphelyzetbe állítása | `200 OK` | - |
-| `POST` | `/api/tickets/book` | Jegy foglalása (jegytípus, dinamikus ár & e-mail értesítés) | `201 Created` | `409 Conflict` (teltház), `400 Bad Request` |
-| `POST` | `/api/tickets/{ticketId}/cancel` | Jegyrendelés lemondása és kapacitás felszabadítása | `200 OK` | `404 Not Found`, `400 Bad Request` |
+| `POST` | `/api/tickets/book` | Jegy foglalása (kapacitás-, kvóta- és múltbeli dátum ellenőrzés, dinamikus ár & e-mail) | `201 Created` | `409 Conflict` (teltház), `400 Bad Request` (lezárult esemény / hibás adat) |
+| `POST` | `/api/tickets/{ticketId}/cancel` | Jegyrendelés lemondása és kapacitás felszabadítása (múltbeli eseményre tiltott) | `200 OK` | `404 Not Found`, `400 Bad Request` (már lezárult esemény / már lemondott jegy) |
 | `GET` | `/api/tickets` | Megvásárolt jegyek listája (opcionális `?email=` szűréssel) | `200 OK` | - |
 | `GET` | `/api/tickets/event/{eventId}` | Adott eseményhez tartozó jegyek | `200 OK` | - |

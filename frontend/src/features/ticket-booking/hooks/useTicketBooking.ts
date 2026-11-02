@@ -3,6 +3,7 @@ import { Event } from '@/features/events/types';
 import { Ticket } from '@/features/ticket-booking/types';
 import { ticketService } from '@/features/ticket-booking/services/ticketService';
 import { getClientLanguage } from '@/shared/services/apiClient';
+import { isEventPast } from '@/shared/utils/formatters';
 
 interface UseTicketBookingOptions {
   onSuccess?: (ticket: Ticket) => void;
@@ -38,6 +39,11 @@ export function useTicketBooking({ onSuccess }: UseTicketBookingOptions = {}) {
 
   const submitBooking = useCallback(async () => {
     if (!selectedEvent) return null;
+
+    if (isEventPast(selectedEvent.date)) {
+      setError('Cannot book tickets for an event that has already ended.');
+      return null;
+    }
 
     try {
       setLoading(true);

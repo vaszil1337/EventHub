@@ -4,6 +4,7 @@ import hu.eventhub.application.port.in.BookTicketCommand;
 import hu.eventhub.application.port.in.BookTicketUseCase;
 import hu.eventhub.application.port.out.EmailNotificationPort;
 import hu.eventhub.domain.exception.EventNotFoundException;
+import hu.eventhub.domain.exception.InvalidBookingException;
 import hu.eventhub.domain.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,10 @@ public class BookTicketService implements BookTicketUseCase {
         EventId eventId = EventId.of(command.eventId());
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event with ID \"" + command.eventId() + "\" does not exist."));
+
+        if (event.getDate().isBefore(clock.instant())) {
+            throw new InvalidBookingException("Cannot book tickets for an event that has already ended.");
+        }
 
         Capacity capacityBeforeBooking = event.getCapacity();
 
