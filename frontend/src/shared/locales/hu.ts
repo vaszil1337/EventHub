@@ -148,7 +148,7 @@ export const hu: TranslationDictionary = {
     descriptionEn: 'Leírás (Angol)',
     descriptionHu: 'Leírás (Magyar)',
     category: 'Kategória',
-    dateIso: 'ISO dátum (UTC)',
+    dateIso: 'Esemény dátuma és időpontja',
     venueName: 'Helyszín neve',
     venueAddress: 'Helyszín címe',
     venueCapacity: 'Helyszín kapacitása (Max férőhely)',

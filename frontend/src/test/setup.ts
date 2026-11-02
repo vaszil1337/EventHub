@@ -139,6 +139,7 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
       soldTicketsCount: 0,
       price: { amount: body.basePriceAmount, currency: body.currency || 'USD' },
       category: body.category || 'General',
+      imageUrl: body.imageUrl?.trim() || 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1000&q=80',
     };
     mockEvents.push(newEvent);
     return new Response(JSON.stringify(newEvent), {

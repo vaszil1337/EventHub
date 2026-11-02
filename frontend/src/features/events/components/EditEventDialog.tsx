@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,6 +9,7 @@ import {
   TextField,
   Button,
   Alert,
+  MenuItem,
   CircularProgress,
   alpha,
 } from '@mui/material';
@@ -18,6 +19,7 @@ import { Event } from '@/features/events/types';
 import { eventService } from '@/features/events/services/eventService';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { translateBackendMessage } from '@/shared/utils/errorTranslator';
+import { toDatetimeLocalValue, fromDatetimeLocalValue } from '@/shared/utils/formatters';
 
 interface EditEventDialogProps {
   open: boolean;
@@ -25,6 +27,8 @@ interface EditEventDialogProps {
   onClose: () => void;
   onEventUpdated: (updatedEvent: Event) => void;
 }
+
+const EVENT_CATEGORIES = ['Technology', 'Music', 'Workshop', 'Conference', 'General'];
 
 export const EditEventDialog: React.FC<EditEventDialogProps> = ({
   open,
@@ -35,6 +39,12 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
   const { t } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableCategories = useMemo(() => {
+    const set = new Set(EVENT_CATEGORIES);
+    if (event?.category) set.add(event.category);
+    return Array.from(set);
+  }, [event?.category]);
 
   const [title, setTitle] = useState<string>('');
   const [titleHu, setTitleHu] = useState<string>('');
@@ -54,7 +64,7 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
       setTitleHu(event.titleHu || event.title);
       setDescription(event.description);
       setDescriptionHu(event.descriptionHu || event.description);
-      setDate(event.date);
+      setDate(toDatetimeLocalValue(event.date));
       setVenueName(event.venue.name);
       setVenueAddress(event.venue.address);
       setVenueCapacity(event.venue.capacity);
@@ -92,7 +102,7 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
         titleHu,
         description,
         descriptionHu,
-        date,
+        date: fromDatetimeLocalValue(date),
         venueName,
         venueAddress,
         venueCapacity: Number(venueCapacity),
@@ -243,18 +253,30 @@ export const EditEventDialog: React.FC<EditEventDialogProps> = ({
 
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <TextField
+              select
               required
               label={t('organizer.category')}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               size="small"
-            />
+              fullWidth
+              data-testid="edit-event-category-select"
+            >
+              {availableCategories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {t(`categories.${cat.toLowerCase()}`) || cat}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               required
+              type="datetime-local"
               label={t('organizer.dateIso')}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               size="small"
+              InputLabelProps={{ shrink: true }}
+              data-testid="edit-event-date-input"
             />
           </Box>
 

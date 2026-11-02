@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +23,7 @@ import { eventService } from '@/features/events/services/eventService';
 import { useTranslation } from '@/shared/context/I18nContext';
 import { getLocalizedEventTitle } from '@/shared/utils/eventLocalization';
 import { translateBackendMessage } from '@/shared/utils/errorTranslator';
+import { fromDatetimeLocalValue } from '@/shared/utils/formatters';
 
 interface OrganizerEventDialogProps {
   open: boolean;
@@ -30,6 +31,9 @@ interface OrganizerEventDialogProps {
   events: Event[];
   onEventCreatedOrUpdated: (event: Event, actionLabel: string) => void;
 }
+
+const DEFAULT_EVENT_IMAGE_URL = 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1000&q=80';
+const EVENT_CATEGORIES = ['Technology', 'Music', 'Workshop', 'Conference', 'General'];
 
 export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
   open,
@@ -42,17 +46,26 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const availableCategories = useMemo(() => {
+    const set = new Set(EVENT_CATEGORIES);
+    events.forEach((ev) => {
+      if (ev.category) set.add(ev.category);
+    });
+    return Array.from(set);
+  }, [events]);
+
   // Create Event State
   const [title, setTitle] = useState<string>('');
   const [titleHu, setTitleHu] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [descriptionHu, setDescriptionHu] = useState<string>('');
-  const [date, setDate] = useState<string>('2026-11-15T09:00:00Z');
+  const [date, setDate] = useState<string>('2026-11-15T09:00');
   const [venueName, setVenueName] = useState<string>('');
   const [venueAddress, setVenueAddress] = useState<string>('');
   const [venueCapacity, setVenueCapacity] = useState<number>(120);
   const [basePriceAmount, setBasePriceAmount] = useState<number>(75);
   const [category, setCategory] = useState<string>('Technology');
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   // Add Ticket Type State
   const [targetEventId, setTargetEventId] = useState<string>(events[0]?.id || 'evt-tech-summit-2026');
@@ -80,13 +93,14 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
         titleHu,
         description,
         descriptionHu,
-        date,
+        date: fromDatetimeLocalValue(date),
         venueName,
         venueAddress,
         venueCapacity: Number(venueCapacity),
         basePriceAmount: Number(basePriceAmount),
         currency: 'USD',
         category,
+        imageUrl: imageUrl.trim() || DEFAULT_EVENT_IMAGE_URL,
       });
       setTitle('');
       setTitleHu('');
@@ -94,6 +108,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
       setDescriptionHu('');
       setVenueName('');
       setVenueAddress('');
+      setImageUrl('');
       const localizedTitle = getLocalizedEventTitle(created, locale);
       onEventCreatedOrUpdated(created, t('organizer.eventCreatedSuccess', { title: localizedTitle }));
       onClose();
@@ -146,7 +161,7 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
           p: { xs: 1.5, sm: 2.5 },
           boxShadow: (theme) => `0 20px 25px -5px ${alpha(theme.palette.common.black, 0.1)}`,
           minHeight: 670,
-          maxHeight: 670,
+          maxHeight: 740,
           display: 'flex',
           flexDirection: 'column',
         },
@@ -281,18 +296,30 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
             </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
               <TextField
+                select
                 required
                 label={t('organizer.category')}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 size="small"
-              />
+                fullWidth
+                data-testid="event-category-select"
+              >
+                {availableCategories.map((cat) => (
+                  <MenuItem key={cat} value={cat}>
+                    {t(`categories.${cat.toLowerCase()}`) || cat}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 required
+                type="datetime-local"
                 label={t('organizer.dateIso')}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 size="small"
+                InputLabelProps={{ shrink: true }}
+                data-testid="event-date-input"
               />
             </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
@@ -331,6 +358,16 @@ export const OrganizerEventDialog: React.FC<OrganizerEventDialogProps> = ({
                 size="small"
               />
             </Box>
+
+            <TextField
+              label={t('organizer.imageUrl')}
+              placeholder={DEFAULT_EVENT_IMAGE_URL}
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              size="small"
+              fullWidth
+              data-testid="event-image-url-input"
+            />
 
             {/* Starter Ticket Tiers Info Box */}
             <Box

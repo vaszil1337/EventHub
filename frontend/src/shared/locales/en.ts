@@ -148,7 +148,7 @@ export const en: TranslationDictionary = {
     descriptionEn: 'Description (English)',
     descriptionHu: 'Leírás (Magyar)',
     category: 'Category',
-    dateIso: 'ISO Date (UTC)',
+    dateIso: 'Event Date & Time',
     venueName: 'Venue Name',
     venueAddress: 'Venue Address',
     venueCapacity: 'Venue Capacity (Max Seats)',
